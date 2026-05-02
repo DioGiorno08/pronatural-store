@@ -2,7 +2,6 @@
 
 Proyecto académico del Instituto Técnico Ricaldone enfocado en el diseño y desarrollo de una tienda en línea de productos naturales.
 
----
 
  Estado del Proyecto
 
@@ -13,13 +12,13 @@ El sistema aún no ha sido desarrollado. Actualmente el equipo se encuentra trab
 - Modelado de base de datos
 - Documentación del sistema
 
----
+
 
  Descripción del Proyecto
 
 ProNatural es una plataforma web que permitirá la venta de productos naturales como miel y café, facilitando la gestión de productos, pedidos y usuarios mediante un sistema moderno y eficiente.
 
----
+
 
 Equipo de Desarrollo
 
