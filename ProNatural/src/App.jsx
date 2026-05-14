@@ -1,103 +1,141 @@
 import React, { useState } from 'react';
-// Con esto jalamos todo el diseño que acabas de guardar
 import './App.css';
 
-const RecoveryIcon = () => (
-  <svg width="45" height="45" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-    <path d="M3 3v5h5" />
-    <circle cx="12" cy="12" r="1" />
-  </svg>
-);
-
 const App = () => {
-  const [view, setView] = useState('register'); // 'login', 'register', 'recovery'
+  // Estado para controlar qué pantalla mostrar: 'login', 'register' o 'recovery'
+  const [view, setView] = useState('login'); 
 
+  // --- VISTA DE RECUPERACIÓN (Estilo Volcán / Fullscreen) ---
+  if (view === 'recovery') {
+    return (
+      <div className="recovery-bg-fullscreen">
+        <div className="recovery-icon-circle">🔄</div>
+        <span className="tag-recovery-orange">SEGURIDAD DE ARCHIVO</span>
+        <h2 className="recovery-title-fs">RECUPERAR CUENTA</h2>
+        
+        <p className="form-sub-recovery" style={{color: 'white', opacity: 0.9}}>
+          Ingrese su correo electrónico institucional para recibir las instrucciones de recuperación.
+        </p>
+
+        <div style={{marginBottom: '10px', fontSize: '10px', fontWeight: '800', letterSpacing: '1px'}}>
+          CORREO ELECTRÓNICO
+        </div>
+        <input 
+          type="email" 
+          className="recovery-input-fs" 
+          placeholder="USUARIO@PRONATURAL.COM" 
+        />
+        
+        <button className="btn-recovery-fs">ENVIAR INSTRUCCIONES —</button>
+        
+        <div style={{marginTop: '20px'}}>
+          <button 
+            className="btn-link-simple" 
+            style={{color: 'white', borderBottom: '1px solid white', background: 'none', borderTop: 'none', borderLeft: 'none', borderRight: 'none', cursor: 'pointer'}}
+            onClick={() => setView('login')}
+          >
+            VOLVER AL INICIO
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // --- VISTAS DE LOGIN Y REGISTRO (Estilo Split Card) ---
   return (
     <div className="pro-container">
-      {view === 'recovery' ? (
-        <div className="pro-recovery-card">
-          <div className="recovery-icon-wrapper">
-            <RecoveryIcon />
-          </div>
-          <span className="orange-tag">Seguridad de Archivo</span>
-          <h2 className="form-title">Recuperar Cuenta</h2>
+      <div className="pro-card">
+        
+        {/* PANEL IZQUIERDO DINÁMICO */}
+        <div className={`pro-branding ${view === 'login' ? 'bg-coffee' : 'bg-green'}`}>
+          <div className="pro-logo-top">PRONATURAL</div>
           
-          <div className="pro-input-group">
-            <label>Correo Electrónico</label>
-            <input type="email" placeholder="usuario@pronatural.com" />
-          </div>
-          
-          <button className="btn-primary-pro">Enviar Instrucciones</button>
-          
-          <div className="pro-footer-action">
-            <button className="link-footer-pro" onClick={() => setView('login')}>
-              Volver al inicio
-            </button>
+          {/* Marca de agua solo para registro */}
+          {view === 'register' && (
+            <div className="watermark-center">
+              <span className="script-txt">Safe</span>
+              <span className="bold-txt">WORK</span>
+              <div style={{fontSize: '18px', letterSpacing: '5px', opacity: 0.5, marginTop: '10px'}}>safe work</div>
+            </div>
+          )}
+
+          <div className="branding-footer">
+            <div style={{fontSize: '10px', opacity: 0.6, marginBottom: '10px'}}>Establecido MMXXIV</div>
+            <h1>Acceso al archivo concedido al registrarse</h1>
           </div>
         </div>
-      ) : (
-        <div className="pro-main-card">
-          <div className="pro-branding-side">
-            <div className="pro-logo-top">PRONATURAL</div>
-            
-            <div className="pro-watermark">
-              <span className="watermark-script">Safe</span>
-              <span className="watermark-bold">WORK</span>
-            </div>
 
-            <div className="branding-content">
-              <span className="est-label">Establecido MMXXIV</span>
-              <h1>Acceso al archivo concedido al registrarse</h1>
-            </div>
-          </div>
+        {/* PANEL DERECHO DINÁMICO */}
+        <div className="pro-form-side">
+          
+          {/* FORMULARIO DE LOGIN */}
+          {view === 'login' && (
+            <>
+              <span className="tag-orange">ACCEDER A TU CUENTA</span>
+              <h2 className="form-h2">LOG IN</h2>
+              <p className="form-sub">
+                Introduce tus credenciales autorizadas para acceder a datos técnicos seleccionados.
+              </p>
 
-          <div className="pro-form-side">
-            <span className="orange-tag">
-              {view === 'register' ? 'Crear nueva credencial' : 'Control de acceso'}
-            </span>
-            <h2 className="form-title">
-              {view === 'register' ? 'Registrar Usuario' : 'Iniciar Sesión'}
-            </h2>
+              <div className="field-group">
+                <label>CORREO ELECTRÓNICO</label>
+                <input type="email" placeholder="curator@pronatural.com" />
+              </div>
 
-            <div className="pro-input-group">
-              <label>Correo Electrónico</label>
-              <input type="email" />
-            </div>
+              <div className="field-group">
+                <label>CONTRASEÑA</label>
+                <input type="password" placeholder="********" />
+              </div>
 
-            <div className="pro-input-group">
-              <label>Contraseña</label>
-              <input type="password" />
-            </div>
+              <button className="btn-main-dark">ACCEDER AL INICIO</button>
 
-            <button className="btn-primary-pro">
-              {view === 'register' ? 'Generar Acceso' : 'Entrar al Archivo'}
-            </button>
-
-            <div className="pro-footer-action">
-              <span>
-                {view === 'register' ? '¿Ya tienes una cuenta?' : '¿No tienes acceso?'}
-              </span>
-              
-              <button 
-                className="link-footer-pro" 
-                onClick={() => setView(view === 'register' ? 'login' : 'register')}
-              >
-                {view === 'register' ? 'Inicia Sesión Aquí' : 'Solicitar Registro'}
-              </button>
-
-              {view === 'login' && (
-                <button 
-                  className="link-footer-pro" 
-                  onClick={() => setView('recovery')}
-                >
-                  ¿Olvidaste tu contraseña?
+              <div className="login-footer-actions" style={{display: 'flex', justifyContent: 'space-between', marginTop: '30px'}}>
+                <button className="btn-link-simple" onClick={() => setView('recovery')}>
+                  ¿OLVIDASTE TU CONTRASEÑA?
                 </button>
-              )}
-            </div>
-          </div>
+                <button className="btn-link-orange" onClick={() => setView('register')}>
+                  CREAR CUENTA
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* FORMULARIO DE REGISTRO */}
+          {view === 'register' && (
+            <>
+              <span className="tag-orange">REGISTRO TÉCNICO</span>
+              <h2 className="form-h2">CREAR CUENTA</h2>
+              <p className="form-sub">Únete al registro para acceso prioritario a lanzamientos de micro-lotes.</p>
+              
+              <div className="field-group">
+                <label>NOMBRE COMPLETO</label>
+                <input type="text" placeholder="ALEXANDER VANCE" />
+              </div>
+              <div className="field-group">
+                <label>CORREO ELECTRÓNICO</label>
+                <input type="email" placeholder="CURATOR@ARCHIVE.COM" />
+              </div>
+              <div className="field-group">
+                <label>CONTRASEÑA ENCRIPTADA</label>
+                <input type="password" placeholder="••••••••••••" />
+              </div>
+              <div className="field-group">
+                <label>CONFIRMAR CONTRASEÑA</label>
+                <input type="password" placeholder="••••••••••••" />
+              </div>
+
+              <button className="btn-main-dark">REGISTRAR CUENTA</button>
+              
+              <div style={{textAlign: 'center', marginTop: '20px'}}>
+                <button className="btn-link-fix" onClick={() => setView('login')}>
+                  ACCEDER A PERFIL EXISTENTE
+                </button>
+              </div>
+            </>
+          )}
+
         </div>
-      )}
+      </div>
     </div>
   );
 };

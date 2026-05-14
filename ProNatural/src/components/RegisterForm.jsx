@@ -1,83 +1,39 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import '../App.css'; // Asegurate de que la ruta sea correcta según tu carpeta
 
 const RegisterForm = () => {
   return (
     <div className="pro-container">
-      <div className="pro-register-card">
-        
-        {/* PANEL IZQUIERDO */}
-        <div className="pro-branding-panel">
-          <div className="pro-top-nav">PRONATURAL</div>
-          
-          <div className="pro-watermark-wrapper">
-            <span className="watermark-script">Safe</span>
-            <span className="watermark-bold">WORK</span>
-            <p className="est-label">safe work</p>
+      <div className="pro-card">
+        <div className="pro-branding">
+          <div className="branding-logo">PRONATURAL</div>
+          <div className="watermark-huge">
+            <span className="script-font">Safe</span>
+            <span className="bold-font">WORK</span>
+            <div style={{fontSize: '18px', letterSpacing: '5px', opacity: 0.5}}>safe work</div>
           </div>
-
-          <div className="pro-branding-bottom">
-            <p className="est-label">Establecido MMXXIV</p>
+          <div className="branding-footer">
+            <div style={{fontSize: '9px', opacity: 0.6}}>Establecido MMXXIV</div>
             <h1>Acceso al archivo concedido al registrarse</h1>
           </div>
         </div>
 
-        {/* PANEL DERECHO */}
-        <div className="pro-form-panel">
-          <div className="pro-form-container">
-            <header className="pro-form-header">
-              <p className="orange-label">REGISTRO TÉCNICO</p>
-              <h2 className="title-create">CREAR CUENTA</h2>
-              <p className="desc-text">ÚNETE AL REGISTRO PARA ACCESO PRIORITARIO A LANZAMIENTOS DE MICRO-LOTES.</p>
-            </header>
+        <div className="pro-form-area">
+          <span className="tag-orange">Registro Técnico</span>
+          <h2 className="form-h2">CREAR CUENTA</h2>
+          <p className="form-sub">Únete al registro para acceso prioritario a lanzamientos de micro-lotes.</p>
 
-            <form className="pro-form-content">
-              <div className="pro-input-field">
-                <label>NOMBRE COMPLETO</label>
-                <input type="text" placeholder="ALEXANDER VANCE" required />
-              </div>
+          <div className="input-block"><label>Nombre Completo</label><input type="text" placeholder="Alexander Vance" /></div>
+          <div className="input-block"><label>Correo Electrónico</label><input type="email" placeholder="curator@archive.com" /></div>
+          <div className="input-block"><label>Contraseña</label><input type="password" placeholder="••••••••••••" /></div>
+          <div className="input-block"><label>Confirmar Contraseña</label><input type="password" placeholder="••••••••••••" /></div>
 
-              <div className="pro-input-field">
-                <label>IDENTIFICADOR DE CORREO ELECTRÓNICO</label>
-                <input type="email" placeholder="CURATOR@ARCHIVE.COM" required />
-              </div>
+          <button className="btn-black">REGISTRAR CUENTA</button>
 
-              <div className="pro-input-field">
-                <label>CONTRASEÑA ENCRIPTADA</label>
-                <input type="password" placeholder="••••••••••••" required />
-              </div>
-
-              <div className="pro-input-field">
-                <label>CONFIRMAR CONTRASEÑA</label>
-                <input type="password" placeholder="••••••••••••" required />
-              </div>
-
-              <button type="submit" className="pro-submit-btn">REGISTRAR CUENTA</button>
-            </form>
-
-            {/* SECCIÓN INFERIOR MEJORADA */}
-            <div className="pro-register-footer">
-              <div className="pro-login-redirect">
-                <p className="est-label">¿YA REGISTRADO?</p>
-                <Link to="/login" className="pro-link-button">
-                  ACCEDER A PERFIL EXISTENTE
-                </Link>
-              </div>
-
-              <div className="pro-protocol-box">
-                <p className="protocol-title">PROTOCOLOS DE DATOS:</p>
-                <p className="protocol-text">
-                  TODA LA INFORMACIÓN SE ALMACENA BAJO LA LEY DE PROTECCIÓN. 
-                  AL REGISTRARTE ACEPTAS NUESTROS TÉRMINOS.
-                </p>
-              </div>
-            </div>
+          <div style={{marginTop: '30px', textAlign: 'center'}}>
+            <button className="link-btn">Acceder a perfil existente</button>
           </div>
         </div>
-
       </div>
     </div>
   );
 };
-
-export default RegisterForm;
