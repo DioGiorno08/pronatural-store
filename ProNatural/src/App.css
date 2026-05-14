@@ -1,0 +1,128 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap');
+
+:root {
+  --verde-pro: #153A2D;
+  --naranja-pro: #C66E4D;
+  --crema-pro: #FDFBF7;
+  --oscuro-pro: #1A1A1A;
+  --blanco: #FFFFFF;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Inter', sans-serif;
+  text-transform: uppercase;
+}
+
+body {
+  background-color: var(--oscuro-pro);
+}
+
+/* --- CONTENEDOR PRINCIPAL --- */
+.pro-container {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 20px;
+  background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), 
+                    url('https://images.unsplash.com/photo-1559056199-641a0ac8b55e?q=80&w=2070&auto=format&fit=crop');
+  background-size: cover;
+  background-position: center;
+}
+
+.pro-main-card {
+  display: flex;
+  width: 100%;
+  max-width: 1100px;
+  height: 750px;
+  background-color: var(--crema-pro);
+  box-shadow: 0 40px 100px rgba(0,0,0,0.8);
+  overflow: hidden;
+}
+
+/* --- PANEL VERDE --- */
+.pro-branding-side {
+  flex: 1.1;
+  background-color: var(--verde-pro);
+  color: var(--blanco);
+  padding: 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+}
+
+.pro-logo-top { font-weight: 900; font-size: 14px; letter-spacing: 0.3em; z-index: 2; }
+
+.pro-watermark {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  text-align: center; width: 100%; opacity: 0.08; pointer-events: none; z-index: 1;
+}
+
+.watermark-script { font-family: 'Brush Script MT', cursive; font-size: 140px; text-transform: none; display: block; line-height: 0.5; }
+.watermark-bold { font-size: 100px; font-weight: 900; display: block; }
+
+.branding-content { z-index: 2; }
+.est-label { font-size: 10px; letter-spacing: 0.2em; color: rgba(255,255,255,0.6); display: block; margin-bottom: 15px; }
+.branding-content h1 { font-size: 42px; font-weight: 600; line-height: 1.1; }
+
+/* --- PANEL BLANCO --- */
+.pro-form-side {
+  flex: 1;
+  padding: 60px 80px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background-color: var(--crema-pro);
+}
+
+.orange-tag { color: var(--naranja-pro); font-size: 11px; font-weight: 800; margin-bottom: 15px; display: block; }
+.form-title { font-size: 32px; font-weight: 600; margin-bottom: 40px; color: var(--oscuro-pro); }
+
+.pro-input-group { margin-bottom: 25px; border-bottom: 1px solid #ddd; text-align: left; }
+.pro-input-group label { display: block; font-size: 9px; font-weight: 800; color: #888; margin-bottom: 5px; }
+.pro-input-group input { width: 100%; border: none; background: transparent; padding: 10px 0; font-size: 14px; outline: none; color: var(--oscuro-pro); }
+
+.btn-primary-pro {
+  width: 100%; padding: 20px; background-color: #0B221A; color: var(--blanco);
+  border: none; font-size: 12px; font-weight: 800; letter-spacing: 0.2em; cursor: pointer; margin-top: 20px; transition: 0.3s;
+}
+.btn-primary-pro:hover { background-color: var(--naranja-pro); }
+
+/* --- TARJETA RECUPERAR --- */
+.pro-recovery-card {
+  width: 100%;
+  max-width: 500px;
+  background-color: var(--blanco);
+  padding: 60px;
+  text-align: center;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+}
+
+.recovery-icon-wrapper { margin-bottom: 25px; color: var(--verde-pro); }
+
+.pro-footer-action { margin-top: 40px; text-align: center; display: flex; flex-direction: column; gap: 15px; align-items: center; }
+.pro-footer-action span { font-size: 10px; color: #999; }
+
+/* --- BLINDAJE ANTI MORADO --- */
+.link-footer-pro {
+  display: inline-block;
+  color: var(--oscuro-pro) !important;
+  font-weight: 800;
+  font-size: 11px;
+  border: none;
+  background: none;
+  border-bottom: 2px solid var(--oscuro-pro);
+  padding-bottom: 2px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.3s;
+}
+
+.link-footer-pro:hover {
+  color: var(--naranja-pro) !important;
+  border-bottom-color: var(--naranja-pro);
+}
