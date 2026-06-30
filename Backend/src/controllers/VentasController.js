@@ -230,6 +230,20 @@ controladoresVentas.updateSaleStatus = async (req, res) => {
   }
 };
 
+// DELETE - Eliminar una venta
+controladoresVentas.deleteSale = async (req, res) => {
+  try {
+    const sale = await salesModel.findByIdAndDelete(req.params.id);
+    if (!sale) {
+      return res.status(404).json({ message: "Venta no encontrada" });
+    }
+    return res.status(200).json({ message: "Venta eliminada exitosamente" });
+  } catch (error) {
+    console.log("error" + error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 // SELECT - Ventas por rango de fechas
 controladoresVentas.getSalesByDateRange = async (req, res) => {
   try {

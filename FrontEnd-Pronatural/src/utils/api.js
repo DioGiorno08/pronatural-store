@@ -165,11 +165,6 @@ export const api = {
     method: 'POST',
     body: JSON.stringify({ newPassword, confirmNewPassword })
   }),
-  wompiToken: () => apiRequest('/wompi/token', { method: 'POST' }),
-  wompiPay: (token, formData) => apiRequest('/wompi/paymentTest', {
-    method: 'POST',
-    body: JSON.stringify({ token, formData })
-  }),
   getSales: () => apiRequest('/sales'),
   createSale: (saleData) => apiRequest('/sales', {
     method: 'POST',

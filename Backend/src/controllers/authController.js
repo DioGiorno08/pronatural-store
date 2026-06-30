@@ -124,7 +124,13 @@ authController.login = async (req, res) => {
     }
 
     const userPasswordHash = user.contraseña || user.password;
+    console.log("LOGIN ATTEMPT:");
+    console.log("Email from request:", emailRegex);
+    console.log("Password from request:", `'${password}'`);
+    console.log("User found:", user.correo || user.email);
+    console.log("Hash in DB:", userPasswordHash);
     const isMatch = await bcrypt.compare(password, userPasswordHash);
+    console.log("Is Match:", isMatch);
 
     if (!isMatch) {
       user.loginAttemps = (user.loginAttemps || 0) + 1;

@@ -23,7 +23,8 @@ router
 router
   .route("/:id")
   .get(validateAuthCookie(["Admin", "Employee"]), salesController.getSaleById)
-  .put(validateAuthCookie(["Admin"]), salesController.updateSaleStatus);
+  .put(validateAuthCookie(["Admin"]), salesController.updateSaleStatus)
+  .delete(validateAuthCookie(["Admin"]), salesController.deleteSale);
 
 // Enviar factura digital por correo
 router

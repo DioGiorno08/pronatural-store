@@ -179,8 +179,15 @@ export function GlobalDataProvider({ children }) {
     }
   };
 
-  const deleteSale = (id) => {
-    setSales(prev => prev.filter(s => s.id !== id && s._id !== id));
+  const deleteSale = async (id) => {
+    try {
+      await api.deleteSale(id);
+      setSales(prev => prev.filter(s => s.id !== id && s._id !== id));
+    } catch(e) {
+      console.error("Error deleting sale:", e);
+      // Fallback local UI delete if error
+      setSales(prev => prev.filter(s => s.id !== id && s._id !== id));
+    }
   };
   const addReview = async (review) => {
     try {
