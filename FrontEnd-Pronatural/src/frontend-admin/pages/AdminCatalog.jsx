@@ -78,16 +78,13 @@ function ProductModal({ onClose, onSave, initialData }) {
             </select>
           </div>
           <div>
-            <label className="text-gray-400 text-xs uppercase tracking-wider mb-1.5 block">Imagen del Producto (Opcional)</label>
+            <label className="text-gray-400 text-xs uppercase tracking-wider mb-1.5 block">URL de la Imagen (Cloudinary)</label>
             <input 
-              type="file" 
-              accept="image/*"
-              onChange={(e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                setForm({ ...form, file: file, img: URL.createObjectURL(file) });
-              }}
-              className="w-full bg-[#0d1117] border border-[#1e2a1e] rounded-lg px-4 py-2 text-gray-400 text-sm focus:outline-none focus:border-[#22c55e] transition-colors file:mr-4 file:py-1.5 file:px-3 file:rounded-[6px] file:border-0 file:text-xs file:font-bold file:bg-[#1b4332] file:text-[#4ade80] hover:file:bg-[#30b466] hover:file:text-[#0d1114] file:transition-colors file:cursor-pointer cursor-pointer" />
+              type="url" 
+              value={form.img || ''}
+              onChange={(e) => setForm({ ...form, img: e.target.value, file: null })}
+              placeholder="https://res.cloudinary.com/..."
+              className="w-full bg-[#0d1117] border border-[#1e2a1e] rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#22c55e] transition-colors" />
             {form.img && (
               <div className="mt-3 h-16 w-16 rounded-[8px] overflow-hidden bg-white/5 border border-white/10">
                 <img src={form.img} alt="Preview" className="w-full h-full object-cover" />

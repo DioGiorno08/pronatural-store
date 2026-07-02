@@ -14,7 +14,8 @@ export default function Header({ toggleSidebar }) {
           <span className="mr-0.5">PRO</span>NATURAL
         </Link>
         <nav className="hidden md:flex gap-8">
-          <Link to="/catalogo" className="text-[10px] font-bold tracking-[0.15em] text-brand-dark hover:text-gray-500 transition-colors uppercase">INICIO</Link>
+          <Link to="/" className="text-[10px] font-bold tracking-[0.15em] text-brand-dark hover:text-gray-500 transition-colors uppercase">INICIO</Link>
+          <Link to="/catalogo" className="text-[10px] font-bold tracking-[0.15em] text-brand-dark hover:text-gray-500 transition-colors uppercase">CATÁLOGO</Link>
           <Link to="/acerca" className="text-[10px] font-bold tracking-[0.15em] text-brand-dark hover:text-gray-500 transition-colors uppercase">ACERCA DE</Link>
           <Link to="/contacto" className="text-[10px] font-bold tracking-[0.15em] text-brand-dark hover:text-gray-500 transition-colors uppercase">CONTACTO</Link>
         </nav>

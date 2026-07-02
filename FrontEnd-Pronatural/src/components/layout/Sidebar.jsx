@@ -17,19 +17,37 @@ export default function Sidebar({ isOpen, setIsOpen }) {
       {/* Overlay */}
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-40 transition-opacity cursor-pointer"
+          className="fixed inset-0 bg-black/50 z-40 transition-opacity cursor-pointer lg:hidden"
           onClick={() => setIsOpen(false)}
         />
       )}
-      <aside className={`fixed top-0 left-0 h-full w-[280px] bg-brand-sidebar z-50 transform transition-transform duration-300 ease-in-out flex flex-col py-10 px-8 border-r border-gray-200/50 justify-between ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`fixed lg:relative top-0 left-0 h-full lg:h-auto lg:min-h-screen w-[280px] bg-brand-sidebar z-50 transform transition-transform duration-300 ease-in-out flex flex-col py-10 px-8 border-r border-gray-200/50 justify-between ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} flex-shrink-0`}>
         <div>
           <div className="mb-14 flex items-center justify-between">
             <Link to="/catalogo" onClick={() => setIsOpen(false)} className="text-[28px] font-bold tracking-tight text-brand-dark uppercase">CATALOGO</Link>
-            <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-brand-dark p-2 -mr-2 cursor-pointer transition-colors">
+            <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-brand-dark p-2 -mr-2 cursor-pointer transition-colors lg:hidden">
               <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
           </div>
         <nav className="mb-12">
+          {/* Mobile Main Navigation */}
+          <ul className="space-y-2 mb-8 md:hidden border-b border-gray-200/50 pb-8">
+            <li>
+              <NavLink to="/" onClick={() => setIsOpen(false)} className={linkClass}>
+                INICIO
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/acerca" onClick={() => setIsOpen(false)} className={linkClass}>
+                ACERCA DE
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/contacto" onClick={() => setIsOpen(false)} className={linkClass}>
+                CONTACTO
+              </NavLink>
+            </li>
+          </ul>
           <ul className="space-y-1">
             <li>
               <NavLink to="/catalogo" className="flex items-center text-xs font-bold tracking-widest px-5 py-4 transition-colors uppercase bg-brand-dark text-white shadow-md">

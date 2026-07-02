@@ -27,6 +27,7 @@ export default function TopNavbar() {
         {/* Desktop Nav */}
         <nav className="hidden md:flex gap-12">
           <NavLink to="/" end className={navLinkClass}>INICIO</NavLink>
+          <NavLink to="/catalogo" className={navLinkClass}>CATÁLOGO</NavLink>
           <NavLink to="/acerca" className={navLinkClass}>ACERCA DE</NavLink>
           <NavLink to="/resenas" className={navLinkClass}>RESEÑAS</NavLink>
           <NavLink to="/contacto" className={navLinkClass}>CONTACTO</NavLink>
@@ -73,6 +74,7 @@ export default function TopNavbar() {
       <div className={`md:hidden fixed top-[61px] left-0 right-0 z-40 bg-brand-bg border-b border-gray-100 overflow-hidden transition-all duration-300 ${menuOpen ? 'max-h-72 opacity-100' : 'max-h-0 opacity-0'}`}>
         <nav className="px-5 pb-2">
           <NavLink to="/" end className={mobileNavLinkClass} onClick={() => setMenuOpen(false)}>INICIO</NavLink>
+          <NavLink to="/catalogo" className={mobileNavLinkClass} onClick={() => setMenuOpen(false)}>CATÁLOGO</NavLink>
           <NavLink to="/acerca" className={mobileNavLinkClass} onClick={() => setMenuOpen(false)}>ACERCA DE</NavLink>
           <NavLink to="/resenas" className={mobileNavLinkClass} onClick={() => setMenuOpen(false)}>RESEÑAS</NavLink>
           <NavLink to="/contacto" className={mobileNavLinkClass} onClick={() => setMenuOpen(false)}>CONTACTO</NavLink>

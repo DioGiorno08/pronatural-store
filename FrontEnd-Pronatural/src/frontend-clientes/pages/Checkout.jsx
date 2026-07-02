@@ -149,7 +149,7 @@ export default function Checkout() {
         '',
         'Método de pago: Transferencia / Efectivo vía WhatsApp'
       ].join('\n');
-      const phone = '50322222222';
+      const phone = c.whatsapp || '50322222222';
       return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
     };
 

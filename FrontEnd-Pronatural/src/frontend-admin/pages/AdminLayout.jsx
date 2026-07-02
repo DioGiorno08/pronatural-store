@@ -2,6 +2,7 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useGlobalData } from '../../context/GlobalDataContext';
+import { ADMIN_PREFIX } from '../../config';
 const IconLogo = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21Z" fill="#75e29f" />
@@ -91,10 +92,10 @@ function AdminSidebar({ isOpen, setIsOpen }) {
       <nav className="flex-1 px-4 space-y-1">
         {role === 'Admin' && (
           <>
-            <NavLink to="/admin" end className={navLink}>
+            <NavLink to={ADMIN_PREFIX} end className={navLink}>
               <IconDashboard /><span>Panel Principal</span>
             </NavLink>
-            <NavLink to="/admin/catalogo" className={navLink}>
+            <NavLink to={`${ADMIN_PREFIX}/catalogo`} className={navLink}>
               <IconInventory /><span>Catálogo</span>
             </NavLink>
             <NavLink to="/inventario" className={navLink}>
@@ -106,25 +107,25 @@ function AdminSidebar({ isOpen, setIsOpen }) {
             <NavLink to="/ventas/historial" className={navLink}>
               <IconReports /><span>Historial de Ventas</span>
             </NavLink>
-            <NavLink to="/admin/vendedores" className={navLink}>
+            <NavLink to={`${ADMIN_PREFIX}/vendedores`} className={navLink}>
               <IconSuppliers /><span>Vendedores</span>
             </NavLink>
             <NavLink to="/reportes" className={navLink}>
               <IconReports /><span>Reportes</span>
             </NavLink>
-            <NavLink to="/admin/resenas" className={navLink}>
+            <NavLink to={`${ADMIN_PREFIX}/resenas`} className={navLink}>
               <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
               </svg>
               <span>Reseñas</span>
             </NavLink>
-            <NavLink to="/admin/categorias" className={navLink}>
+            <NavLink to={`${ADMIN_PREFIX}/categorias`} className={navLink}>
               <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path d="M4 6h16M4 12h16M4 18h16"/>
               </svg>
               <span>Categorías</span>
             </NavLink>
-            <NavLink to="/admin/clientes" className={navLink}>
+            <NavLink to={`${ADMIN_PREFIX}/clientes`} className={navLink}>
               <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
               </svg>
@@ -143,10 +144,10 @@ function AdminSidebar({ isOpen, setIsOpen }) {
             <NavLink to="/ventas/historial" className={navLink}>
               <IconReports /><span>Historial de Ventas</span>
             </NavLink>
-            <NavLink to="/admin/catalogo" className={navLink}>
+            <NavLink to={`${ADMIN_PREFIX}/catalogo`} className={navLink}>
               <IconInventory /><span>Catálogo</span>
             </NavLink>
-            <NavLink to="/admin/resenas" className={navLink}>
+            <NavLink to={`${ADMIN_PREFIX}/resenas`} className={navLink}>
               <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
               </svg>

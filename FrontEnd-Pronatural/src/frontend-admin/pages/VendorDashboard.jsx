@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { ADMIN_PREFIX } from '../../config';
 import { useAuth } from '../../hooks/useAuth';
 import { useGlobalData } from '../../context/GlobalDataContext';
 function MetricCardVendor({ icon, label, value, trend, isMeta, metaPercent }) {
@@ -73,7 +74,7 @@ export default function VendorDashboard() {
         <div>
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-[18px] text-white font-semibold">Tus Productos Destacados</h2>
-            <button onClick={() => navigate('/admin/catalogo')} className="text-[#30b466] hover:text-[#4ade80] text-[12px] font-medium transition-colors flex items-center gap-1 cursor-pointer">
+            <button onClick={() => navigate(`${ADMIN_PREFIX}/catalogo`)} className="text-[#30b466] hover:text-[#4ade80] text-[12px] font-medium transition-colors flex items-center gap-1 cursor-pointer">
               Ver Catálogo Completo <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             </button>
           </div>

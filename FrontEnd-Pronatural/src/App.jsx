@@ -35,6 +35,8 @@ import SalesHistory from './frontend-admin/pages/SalesHistory';
 import Settings from './frontend-admin/pages/Settings';
 import AdminReviews from './frontend-admin/pages/AdminReviews';
 import AdminDashboard from './frontend-admin/pages/AdminDashboard';
+import { ADMIN_PREFIX } from './config';
+
 function App() {
   return (
     <AuthProvider>
@@ -57,9 +59,9 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/recover" element={<RecoverPassword />} />
-              <Route path="/admin/login" element={<AdminLogin />} />
-              <Route path="/admin/register" element={<AdminRegister />} />
-              <Route path="/admin/recover" element={<AdminRecoverPassword />} />
+              <Route path={`${ADMIN_PREFIX}/login`} element={<AdminLogin />} />
+              <Route path={`${ADMIN_PREFIX}/register`} element={<AdminRegister />} />
+              <Route path={`${ADMIN_PREFIX}/recover`} element={<AdminRecoverPassword />} />
               <Route
                 path="/"
                 element={
@@ -89,24 +91,24 @@ function App() {
               </Route>
               <Route
                 element={
-                  <ProtectedRoute allowedRoles={['Admin', 'Employee']} authFallback="/admin/login">
+                  <ProtectedRoute allowedRoles={['Admin', 'Employee']} authFallback={`${ADMIN_PREFIX}/login`}>
                     <AdminLayout />
                   </ProtectedRoute>
                 }
               >
-                <Route path="/admin" element={
+                <Route path={ADMIN_PREFIX} element={
                   <ProtectedRoute allowedRoles={['Admin']}><AdminDashboard /></ProtectedRoute>
                 } />
-                <Route path="/admin/catalogo" element={
+                <Route path={`${ADMIN_PREFIX}/catalogo`} element={
                   <ProtectedRoute allowedRoles={['Admin', 'Employee']}><AdminCatalog /></ProtectedRoute>
                 } />
                 <Route path="/inventario" element={
                   <ProtectedRoute allowedRoles={['Admin']}><InventoryManagement /></ProtectedRoute>
                 } />
-                <Route path="/admin/vendedores" element={
+                <Route path={`${ADMIN_PREFIX}/vendedores`} element={
                   <ProtectedRoute allowedRoles={['Admin']}><AdminSellers /></ProtectedRoute>
                 } />
-                <Route path="/admin/clientes" element={
+                <Route path={`${ADMIN_PREFIX}/clientes`} element={
                   <ProtectedRoute allowedRoles={['Admin', 'Employee']}><AdminCustomers /></ProtectedRoute>
                 } />
                 <Route path="/reportes" element={
@@ -124,12 +126,12 @@ function App() {
                 <Route path="/ajustes" element={
                   <ProtectedRoute allowedRoles={['Admin', 'Employee']}><Settings /></ProtectedRoute>
                 } />
-                <Route path="/admin/categorias" element={
-                  <ProtectedRoute allowedRoles={['Admin', 'Employee']} authFallback="/admin/login">
+                <Route path={`${ADMIN_PREFIX}/categorias`} element={
+                  <ProtectedRoute allowedRoles={['Admin', 'Employee']} authFallback={`${ADMIN_PREFIX}/login`}>
                     <AdminCategories />
                   </ProtectedRoute>
                 } />
-                <Route path="/admin/resenas" element={
+                <Route path={`${ADMIN_PREFIX}/resenas`} element={
                   <ProtectedRoute allowedRoles={['Admin', 'Employee']}><AdminReviews /></ProtectedRoute>
                 } />
               </Route>

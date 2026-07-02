@@ -1,5 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { ADMIN_PREFIX } from '../../config';
 export default function ProtectedRoute({ children, allowedRoles, authFallback = '/register' }) {
   const { isAuthenticated, user, loading } = useAuth();
   if (loading) {
@@ -14,7 +15,7 @@ export default function ProtectedRoute({ children, allowedRoles, authFallback = 
   }
   if (allowedRoles && !allowedRoles.includes(user?.role)) {
     if (user?.role === 'Admin') {
-      return <Navigate to="/admin" replace />;
+      return <Navigate to={ADMIN_PREFIX} replace />;
     }
     if (user?.role === 'Employee') {
       return <Navigate to="/vendedor" replace />;

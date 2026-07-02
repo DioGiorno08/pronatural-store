@@ -23,22 +23,29 @@ export default function Landing() {
     return () => clearInterval(timer);
   }, []);
 
-  const mostSoldProduct = adminProducts.length > 0 ? adminProducts[0] : {
-    id: 1,
-    name: 'EL TOSTADO OSCURO VOLCÁNICO',
-    price: 42.00,
-    img: 'https://images.unsplash.com/photo-1559525839-b184a4d698c7?q=80&w=1200&auto=format&fit=crop',
-    sku: 'SAFE WORK',
-    desc: 'Procedente de las laderas del monte Apung. Perfil de chocolate negro, ciruela silvestre y azufre mineral.'
-  };
+  const validProducts = adminProducts.filter(p => {
+    const name = (p.nombreProducto || p.name || "");
+    return name.trim().length > 0;
+  });
+  
+  const dbMostSold = validProducts.length > 0 ? validProducts[0] : null;
+
+  const mostSoldProduct = dbMostSold ? {
+    id: dbMostSold._id || dbMostSold.id,
+    name: dbMostSold.nombreProducto || dbMostSold.name,
+    price: dbMostSold.precio || dbMostSold.price || 0,
+    img: dbMostSold.imagen || dbMostSold.img || 'https://images.unsplash.com/photo-1559525839-b184a4d698c7?q=80&w=1200&auto=format&fit=crop',
+    sku: dbMostSold.sku || 'N/A',
+    desc: dbMostSold.descripcion || dbMostSold.desc || 'Nuestro producto más popular, seleccionado cuidadosamente por nuestros expertos para ofrecerte la mejor calidad.'
+  } : null;
 
   const handleAddToCart = () => {
     addItem({
       id: mostSoldProduct.id,
       name: mostSoldProduct.name,
       price: mostSoldProduct.price,
-      image: mostSoldProduct.img || 'https://images.unsplash.com/photo-1559525839-b184a4d698c7?q=80&w=1200&auto=format&fit=crop',
-      batchRef: mostSoldProduct.sku || 'BATCH NO. 042'
+      image: mostSoldProduct.img,
+      batchRef: mostSoldProduct.sku
     });
     navigate('/carrito');
   };
@@ -97,6 +104,7 @@ export default function Landing() {
       </section>
 
       {/* ── LO MÁS VENDIDO ── */}
+      {mostSoldProduct && (
       <section className="py-16 md:py-32 px-5 md:px-16 lg:px-24 bg-[#fdfaf6]">
         <p className="text-orange-700 text-[10px] font-bold tracking-[0.2em] uppercase mb-4">LOTES SELECCIONADOS</p>
         <h2 className="text-4xl md:text-[44px] font-bold tracking-tighter text-brand-dark mb-10 md:mb-20 border-b border-gray-300 pb-6 inline-block pr-6 md:pr-12">
@@ -137,6 +145,7 @@ export default function Landing() {
           </div>
         </div>
       </section>
+      )}
 
       {/* ── SECCIÓN FILOSOFÍA ── */}
       <section className="py-16 md:py-32 px-5 md:px-16 lg:px-24 bg-[#f9f8f4] flex flex-col md:flex-row gap-10 md:gap-0">
@@ -147,15 +156,23 @@ export default function Landing() {
           </h2>
         </div>
         <div className="w-full md:w-2/3 md:pl-12 lg:pl-24 md:border-l border-gray-200 py-4 md:py-6">
-          <p className="text-base md:text-[22px] font-medium text-brand-dark mb-8 md:mb-16 leading-relaxed max-w-xl">
+          <p className="text-base md:text-[22px] font-medium text-brand-dark mb-8 leading-relaxed max-w-xl">
             No vendemos productos agrícolas; seleccionamos momentos geológicos. Cada lote es un registro histórico de la lluvia, el suelo y la precisión biológica.
           </p>
-          <div className="flex flex-col sm:flex-row gap-10 sm:gap-16">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-10 sm:gap-16">
             <div>
               <h4 className="text-[10px] font-bold text-orange-700 tracking-[0.2em] uppercase mb-4">ÉTICA</h4>
               <p className="text-[10px] text-gray-500 uppercase tracking-[0.15em] leading-[1.8] max-w-[220px]">
                 SIN ADITIVOS. SIN MEZCLAS.<br />PUREZA DE ORIGEN ÚNICO.
               </p>
+            </div>
+            <div>
+              <Link
+                to="/catalogo"
+                className="bg-[#0b2216] text-white text-[10px] font-bold tracking-[0.2em] px-8 py-4 uppercase hover:bg-[#123827] transition-colors inline-block shadow-md"
+              >
+                IR AL CATÁLOGO
+              </Link>
             </div>
           </div>
         </div>

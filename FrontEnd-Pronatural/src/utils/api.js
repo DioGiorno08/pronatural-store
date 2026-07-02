@@ -107,10 +107,13 @@ export const api = {
     method: 'POST',
     body: JSON.stringify(saleData)
   }),
-  updateSaleStatus: (id, status) => apiRequest(`/sales/${id}`, {
-    method: 'PUT',
-    body: JSON.stringify({ status })
-  }),
+  updateSaleStatus: (id, payload) => {
+    const bodyData = typeof payload === 'string' ? { status: payload } : payload;
+    return apiRequest(`/sales/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(bodyData)
+    });
+  },
   getSuppliers: () => apiRequest('/suppliers'),
   createSupplier: (supplierData) => apiRequest('/suppliers', {
     method: 'POST',
@@ -171,6 +174,17 @@ export const api = {
     body: JSON.stringify(saleData)
   }),
   sendInvoice: (id) => apiRequest(`/sales/${id}/invoice`, {
+    method: 'POST'
+  }),
+  deleteSale: (id) => apiRequest(`/sales/${id}`, {
+    method: 'DELETE'
+  }),
+  getConfig: () => apiRequest('/ajustes'),
+  updateConfig: (data) => apiRequest('/ajustes', {
+    method: 'PUT',
+    body: JSON.stringify(data)
+  }),
+  sendInventoryReport: () => apiRequest('/ajustes/send-report', {
     method: 'POST'
   })
 };

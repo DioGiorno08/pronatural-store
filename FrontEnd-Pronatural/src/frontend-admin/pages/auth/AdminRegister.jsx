@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { ADMIN_PREFIX } from '../../../config';
 import { api } from '../../../utils/api';
 
 export default function AdminRegister() {
@@ -39,7 +40,7 @@ export default function AdminRegister() {
     try {
       await api.verifyCodeEmail(otpCode);
       toast.success('Cuenta creada y verificada. Ya puedes iniciar sesión.');
-      navigate('/admin/login');
+      navigate(`${ADMIN_PREFIX}/login`);
     } catch (error) {
       toast.error(error.message || 'Código inválido o expirado');
     } finally {
@@ -184,7 +185,7 @@ export default function AdminRegister() {
           )}
         </div>
         <p className="text-center text-gray-500 text-[12px] mt-6">
-          ¿Ya tienes cuenta? <Link to="/admin/login" className="text-white hover:text-[#4ade80] font-medium transition-colors">Iniciar Sesión</Link>
+          ¿Ya tienes cuenta? <Link to={`${ADMIN_PREFIX}/login`} className="text-white hover:text-[#4ade80] font-medium transition-colors">Iniciar Sesión</Link>
         </p>
       </div>
     </div>

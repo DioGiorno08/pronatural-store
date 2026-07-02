@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGlobalData } from '../../context/GlobalDataContext';
+import { ADMIN_PREFIX } from '../../config';
 function MetricHorizontal({ icon, bgClass, textClass, label, value }) {
   return (
     <div className="bg-[#161b1e] border border-white/5 rounded-[12px] p-5 flex items-center gap-5">
@@ -89,7 +90,7 @@ export default function InventoryManagement() {
             {showFilter ? 'Cerrar' : 'Filtrar'}
           </button>
           <button 
-            onClick={() => navigate('/admin/catalogo')}
+            onClick={() => navigate(`${ADMIN_PREFIX}/catalogo`)}
             className="flex items-center gap-2 px-5 py-2.5 bg-[#75e29f] hover:bg-[#5bc285] text-[#0a110d] text-[13px] font-bold rounded-[10px] transition-colors cursor-pointer"
           >
             + Añadir Producto

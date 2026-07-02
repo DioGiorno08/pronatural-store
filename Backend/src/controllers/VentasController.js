@@ -13,7 +13,7 @@ controladoresVentas.getSales = async (req, res) => {
       .find()
       .populate("customerId", "name lastName email")
       .populate("employeeId", "name lastName")
-      .populate("products.productId", "name price");
+      .populate("products.productId", "nombreProducto precio");
 
     return res.status(200).json(sales);
   } catch (error) {
@@ -29,7 +29,7 @@ controladoresVentas.getSaleById = async (req, res) => {
       .findById(req.params.id)
       .populate("customerId", "name lastName email")
       .populate("employeeId", "name lastName")
-      .populate("products.productId", "name price description");
+      .populate("products.productId", "nombreProducto precio descripcion");
 
     if (!sale) {
       return res.status(404).json({ message: "Venta no encontrada" });
@@ -146,7 +146,7 @@ controladoresVentas.insertSale = async (req, res) => {
     const populatedSale = await salesModel.findById(savedSale._id)
       .populate("customerId", "name lastName email")
       .populate("employeeId", "name lastName")
-      .populate("products.productId", "name price");
+      .populate("products.productId", "nombreProducto precio");
 
     return res.status(201).json(populatedSale);
   } catch (error) {
@@ -258,7 +258,7 @@ controladoresVentas.getSalesByDateRange = async (req, res) => {
       })
       .populate("customerId", "name lastName email")
       .populate("employeeId", "name lastName")
-      .populate("products.productId", "name price");
+      .populate("products.productId", "nombreProducto precio");
 
     return res.status(200).json(sales);
   } catch (error) {

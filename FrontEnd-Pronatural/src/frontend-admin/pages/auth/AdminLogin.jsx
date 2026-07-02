@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
 import toast from 'react-hot-toast';
+import { ADMIN_PREFIX } from '../../../config';
 
 export default function AdminLogin() {
   const { register, handleSubmit, formState: { errors }, watch } = useForm({ mode: 'onTouched' });
@@ -18,7 +19,7 @@ export default function AdminLogin() {
       data.email = data.email.toLowerCase().trim();
       const success = await login(data);
       if (success) {
-        navigate('/admin');
+        navigate(ADMIN_PREFIX);
       }
     } catch (error) {
       if (error.message === "Por seguridad, debes cambiar la contraseña temporal asignada.") {
@@ -39,7 +40,7 @@ export default function AdminLogin() {
         newPassword: data.newPassword
       });
       if (success) {
-        navigate('/admin');
+        navigate(ADMIN_PREFIX);
       }
     } catch (error) {
       // Error handled by AuthContext

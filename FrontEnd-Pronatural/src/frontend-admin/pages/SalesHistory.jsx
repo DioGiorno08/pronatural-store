@@ -1,10 +1,16 @@
 import { useState } from 'react';
 import { useGlobalData } from '../../context/GlobalDataContext';
 import toast from 'react-hot-toast';
+import EditSaleModal from '../components/EditSaleModal';
+
 export default function SalesHistory() {
   const { sales, deleteSale, updateSaleStatus } = useGlobalData();
   const [filterMode, setFilterMode] = useState('all'); 
   const [filterValue, setFilterValue] = useState('');
+  
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedSale, setSelectedSale] = useState(null);
+
   const filteredSales = sales.filter(sale => {
     if (filterMode === 'all') return true;
     const saleDateStr = (sale.createdAt || sale.date) ? (sale.createdAt || sale.date).split('T')[0] : ''; 
@@ -16,12 +22,14 @@ export default function SalesHistory() {
     }
     return true;
   }).sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
+
   const handleDelete = (id) => {
     if (window.confirm('¿Estás seguro de que deseas eliminar este registro de venta?')) {
       deleteSale(id);
       toast.success('Venta eliminada del registro');
     }
   };
+
   const handleConfirmWhatsAppSale = async (id) => {
     if (window.confirm('¿Confirmar que el pago de WhatsApp fue recibido?')) {
       try {
@@ -32,9 +40,22 @@ export default function SalesHistory() {
       }
     }
   };
-  const handleEdit = (id) => {
-    toast.error('Edición de ventas en desarrollo');
+
+  const handleEdit = (sale) => {
+    setSelectedSale(sale);
+    setIsEditModalOpen(true);
   };
+
+  const handleSaveEdit = async (id, payload) => {
+    try {
+      await updateSaleStatus(id, payload);
+      toast.success('Venta actualizada correctamente');
+    } catch (error) {
+      toast.error('Error al actualizar la venta');
+      throw error;
+    }
+  };
+
   const handleFilterModeChange = (e) => {
     setFilterMode(e.target.value);
     setFilterValue('');
@@ -142,7 +163,7 @@ export default function SalesHistory() {
                               <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                             </button>
                           )}
-                          <button onClick={() => handleEdit(sale.id)} className="w-8 h-8 rounded-[8px] bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors cursor-pointer" title="Editar Venta">
+                          <button onClick={() => handleEdit(sale)} className="w-8 h-8 rounded-[8px] bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors cursor-pointer" title="Editar Venta">
                             <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                           </button>
                           <button onClick={() => handleDelete(sale.id || sale._id)} className="w-8 h-8 rounded-[8px] bg-red-500/10 hover:bg-red-500/20 flex items-center justify-center text-red-400 transition-colors cursor-pointer" title="Eliminar Venta">
@@ -158,6 +179,13 @@ export default function SalesHistory() {
           </table>
         </div>
       </div>
+      
+      <EditSaleModal 
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        sale={selectedSale}
+        onSave={handleSaveEdit}
+      />
     </div>
   );
 }

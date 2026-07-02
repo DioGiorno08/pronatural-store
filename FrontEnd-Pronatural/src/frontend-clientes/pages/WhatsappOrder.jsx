@@ -1,28 +1,55 @@
 import { Link } from 'react-router-dom';
 import { useCart } from '../../hooks/useCart';
 import { toast } from 'react-hot-toast';
+import { useGlobalData } from '../../context/GlobalDataContext';
+
 export default function WhatsappOrder() {
   const { items, subtotal, clearCart } = useCart();
+  const { addSale, config } = useGlobalData();
+  const c = config || {};
   const shipping = items.length > 0 ? 12.00 : 0;
   const total = subtotal + shipping;
-  const handleWhatsappRedirect = () => {
+
+  const handleWhatsappRedirect = async () => {
     if (items.length === 0) {
       toast.error('Tu carrito está vacío');
       return;
     }
-    let message = `¡Hola! Me gustaría realizar un pedido:\n\n`;
-    items.forEach(item => {
-      message += `- ${item.quantity}x ${item.name || item.title} ($${(item.price * item.quantity).toFixed(2)})\n`;
-    });
-    message += `\nSubtotal: $${subtotal.toFixed(2)}`;
-    message += `\nEnvío: $${shipping.toFixed(2)}`;
-    message += `\n*TOTAL: $${total.toFixed(2)}*\n\n`;
-    message += `¿Cuáles son los pasos a seguir?`;
-    const encodedMessage = encodeURIComponent(message);
-    const whatsappNumber = "50369674467";
-    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
-    clearCart();
-    window.open(whatsappUrl, '_blank');
+
+    try {
+      const formattedProducts = items.map(item => ({
+        productId: item._id || item.id,
+        quantity: item.quantity
+      }));
+
+      await addSale({
+        customerId: null,
+        products: formattedProducts,
+        total: total,
+        paymentMethod: 'whatsapp',
+        status: 'Pendiente WhatsApp',
+        notes: 'Pedido iniciado directamente vía botón de WhatsApp'
+      });
+
+      let message = `¡Hola! Me gustaría realizar un pedido:\n\n`;
+      items.forEach(item => {
+        message += `- ${item.quantity}x ${item.name || item.title} ($${(item.price * item.quantity).toFixed(2)})\n`;
+      });
+      message += `\nSubtotal: $${subtotal.toFixed(2)}`;
+      message += `\nEnvío: $${shipping.toFixed(2)}`;
+      message += `\n*TOTAL: $${total.toFixed(2)}*\n\n`;
+      message += `¿Cuáles son los pasos a seguir?`;
+
+      const encodedMessage = encodeURIComponent(message);
+      const whatsappNumber = c.whatsapp || "50369674467";
+      const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+
+      clearCart();
+      window.open(whatsappUrl, '_blank');
+    } catch (error) {
+      console.error('Error al registrar venta por whatsapp:', error);
+      toast.error('Error al procesar el pedido.');
+    }
   };
   return (
     <div className="min-h-[calc(100vh-80px)] bg-brand-bg flex items-center justify-center p-6 md:p-12 relative overflow-hidden">

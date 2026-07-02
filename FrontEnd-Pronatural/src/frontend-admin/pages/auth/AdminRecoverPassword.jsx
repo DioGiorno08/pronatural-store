@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
 import { api } from '../../../utils/api';
 import toast from 'react-hot-toast';
+import { ADMIN_PREFIX } from '../../../config';
 
 export default function AdminRecoverPassword() {
   const [step, setStep] = useState(1);
@@ -43,7 +44,7 @@ export default function AdminRecoverPassword() {
     try {
       await api.updateAdminPassword(data.newPassword, data.confirmNewPassword);
       toast.success('Contraseña actualizada exitosamente');
-      navigate('/admin/login');
+      navigate(`${ADMIN_PREFIX}/login`);
     } catch (error) {
       toast.error(error.message || 'Error al actualizar contraseña');
     } finally {
@@ -166,7 +167,7 @@ export default function AdminRecoverPassword() {
         </div>
 
         <p className="text-center text-gray-500 text-[12px] mt-6">
-          <Link to="/admin/login" className="text-white hover:text-[#4ade80] font-medium transition-colors flex items-center justify-center gap-1">
+          <Link to={`${ADMIN_PREFIX}/login`} className="text-white hover:text-[#4ade80] font-medium transition-colors flex items-center justify-center gap-1">
             <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
             Volver al Inicio de Sesión
           </Link>

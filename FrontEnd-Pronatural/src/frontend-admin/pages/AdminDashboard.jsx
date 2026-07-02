@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { ADMIN_PREFIX } from '../../config';
 import { useGlobalData } from '../../context/GlobalDataContext';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 const formatCurrency = (n) => `$${Number(n).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
@@ -71,7 +72,7 @@ export default function AdminDashboard() {
             <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Exportar Reporte
           </button>
-          <button onClick={() => navigate('/admin/catalogo')} className="flex items-center gap-2 px-5 py-2.5 bg-[#30b466] hover:bg-[#289e58] text-[#0a110d] text-[13px] font-bold rounded-[10px] transition-colors shadow-[0_0_15px_rgba(48,180,102,0.3)] cursor-pointer">
+          <button onClick={() => navigate(`${ADMIN_PREFIX}/catalogo`)} className="flex items-center gap-2 px-5 py-2.5 bg-[#30b466] hover:bg-[#289e58] text-[#0a110d] text-[13px] font-bold rounded-[10px] transition-colors shadow-[0_0_15px_rgba(48,180,102,0.3)] cursor-pointer">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Nuevo Producto
           </button>

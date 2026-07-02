@@ -31,6 +31,7 @@ export function GlobalDataProvider({ children }) {
   const [reviews, setReviews] = useState([]);
   const [users, setUsers] = useState([]); // This will now hold our Empleados from MongoDB
   const [customers, setCustomers] = useState([]);
+  const [config, setConfig] = useState(null);
 
   useEffect(() => {
     // Cargar datos reales del backend al iniciar
@@ -40,13 +41,14 @@ export function GlobalDataProvider({ children }) {
         const decoded = token ? decodeJwt(token) : null;
         const isAdmin = decoded?.userType === 'Admin' || decoded?.userType === 'Employee';
         
-        const [apiProducts, apiSales, apiCategories, apiEmployees, apiCustomers, apiReviews] = await Promise.all([
+        const [apiProducts, apiSales, apiCategories, apiEmployees, apiCustomers, apiReviews, apiConfig] = await Promise.all([
           api.getProducts().catch(e => { return []; }),
           isAdmin ? api.getSales().catch(e => { return []; }) : Promise.resolve([]),
           api.getCategories().catch(e => { return []; }),
           isAdmin ? api.getEmployees().catch(e => { return []; }) : Promise.resolve([]),
           isAdmin ? api.getClientes().catch(e => { return []; }) : Promise.resolve([]),
-          api.getReviews().catch(e => { return []; })
+          api.getReviews().catch(e => { return []; }),
+          api.getConfig().catch(e => { return null; })
         ]);
         setProducts(Array.isArray(apiProducts) ? apiProducts : []);
         setSales(Array.isArray(apiSales) ? apiSales : []);
@@ -54,6 +56,7 @@ export function GlobalDataProvider({ children }) {
         setUsers(Array.isArray(apiEmployees) ? apiEmployees : []);
         setCustomers(Array.isArray(apiCustomers) ? apiCustomers : []);
         setReviews(Array.isArray(apiReviews) ? apiReviews : []);
+        setConfig(apiConfig);
       } catch (error) {
         console.error("Error loading data from backend:", error);
       }
@@ -169,10 +172,11 @@ export function GlobalDataProvider({ children }) {
     }
   };
 
-  const updateSaleStatus = async (id, status) => {
+  const updateSaleStatus = async (id, payload) => {
     try {
-      const updated = await api.updateSaleStatus(id, status);
-      setSales(prev => prev.map(s => (s.id === id || s._id === id) ? { ...s, ...updated } : s));
+      const updated = await api.updateSaleStatus(id, payload);
+      const updatedSale = updated.sale || updated;
+      setSales(prev => prev.map(s => (s.id === id || s._id === id) ? { ...s, ...updatedSale } : s));
     } catch (e) {
       console.error(e);
       throw e;
@@ -274,6 +278,29 @@ export function GlobalDataProvider({ children }) {
       throw e;
     }
   };
+
+  const updateConfig = async (data) => {
+    try {
+      const res = await api.updateConfig(data);
+      setConfig(res.ajustes || data);
+      return res;
+    } catch(e) {
+      console.error(e);
+      throw e;
+    }
+  };
+
+  const sendInventoryReport = async () => {
+    try {
+      return await api.sendInventoryReport();
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
+  };
+
+
+
   const totalRevenue = sales.reduce((acc, curr) => acc + (curr.total || curr.amount || 0), 0);
   const totalOrders = sales.length;
   const activeInventory = products.reduce((acc, curr) => acc + (curr.stock || 0), 0);
@@ -312,6 +339,9 @@ export function GlobalDataProvider({ children }) {
       addCustomer,
       updateCustomer,
       deleteCustomer,
+      config,
+      updateConfig,
+      sendInventoryReport,
       stats: {
         totalRevenue,
         totalOrders,
