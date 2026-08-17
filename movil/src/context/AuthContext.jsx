@@ -5,7 +5,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 export const AuthContext = createContext();
 
 // URL base de la API del servidor backend (usando la IP local actual de la máquina)
-const API = "http://192.168.0.15:4000/api";
+const API = "http://172.20.10.3:4000/api";
 
 // Proveedor del contexto que envuelve la aplicación
 export const AuthProvider = ({ children }) => {

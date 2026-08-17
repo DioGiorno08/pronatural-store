@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // URL base del backend de la aplicación
-const API_BASE = 'http://192.168.0.15:4000/api';
+const API_BASE = 'http://172.20.10.3:4000/api';
 
 // Cliente API global para realizar peticiones HTTP con cookies de sesión
 export const apiClient = async (endpoint, options = {}) => {

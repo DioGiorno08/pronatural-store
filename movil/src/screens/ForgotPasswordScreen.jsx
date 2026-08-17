@@ -14,7 +14,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 
 // URL base para consultar los endpoints de recuperación del servidor
-const API = "http://192.168.0.15:4000/api";
+const API = "http://172.20.10.3:4000/api";
 
 const ForgotPasswordScreen = ({ navigation }) => {
   // estados para gestionar los pasos del flujo de recuperación

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // URL base para realizar las peticiones a la API del backend
-const API_URL = "http://192.168.0.15:4000/api";
+const API_URL = "http://172.20.10.3:4000/api";
 
 const useCustomData = (endpoint = "/products") => {
   const [data, setData] = useState([]);
