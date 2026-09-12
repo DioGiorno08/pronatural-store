@@ -2,11 +2,11 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // URL por defecto en la nube (producción en Render) y fallback local
 export const DEFAULT_CLOUD_URL = "https://pronatural-backend.onrender.com/api";
-export const DEFAULT_LOCAL_URL = "http://172.20.10.3:4000/api";
+export const DEFAULT_LOCAL_URL = "http://192.168.0.18:4000/api";
 
 const STORAGE_KEY = "custom_api_base_url";
 
-// Obtener la URL base configurada (o la predeterminada)
+// Obtener la URL base configurada (o la predeterminada en la nube)
 export const getApiBaseUrl = async () => {
   try {
     const saved = await AsyncStorage.getItem(STORAGE_KEY);
@@ -16,7 +16,7 @@ export const getApiBaseUrl = async () => {
   } catch (err) {
     console.warn("No se pudo leer URL de API personalizada:", err);
   }
-  return DEFAULT_LOCAL_URL;
+  return DEFAULT_CLOUD_URL;
 };
 
 // Guardar una nueva URL base personalizada
@@ -24,7 +24,7 @@ export const setApiBaseUrl = async (url) => {
   try {
     if (!url || !url.trim()) {
       await AsyncStorage.removeItem(STORAGE_KEY);
-      return DEFAULT_LOCAL_URL;
+      return DEFAULT_CLOUD_URL;
     }
     const cleanUrl = url.trim().replace(/\/+$/, "");
     await AsyncStorage.setItem(STORAGE_KEY, cleanUrl);
@@ -39,7 +39,7 @@ export const setApiBaseUrl = async (url) => {
 export const resetApiBaseUrl = async () => {
   try {
     await AsyncStorage.removeItem(STORAGE_KEY);
-    return DEFAULT_LOCAL_URL;
+    return DEFAULT_CLOUD_URL;
   } catch (err) {
     console.error("Error al restablecer URL de API:", err);
     throw err;
