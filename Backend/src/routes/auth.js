@@ -25,5 +25,10 @@ router.route("/forceChangePassword").post(authController.forceChangePassword);
 // POST /changePassword - Cambio voluntario de contraseña desde el perfil (requiere estar autenticado)
 router.route("/changePassword").post(validateAuthCookie(["Admin", "Employee", "Customer"]), authController.changePassword);
 
+// GET /profile & PUT /profile - Consulta y actualización de perfil del usuario logueado
+router.route("/profile")
+  .get(validateAuthCookie(["Admin", "Employee", "Customer"]), authController.getProfile)
+  .put(validateAuthCookie(["Admin", "Employee", "Customer"]), authController.updateProfile);
+
 // Exportar el enrutador de autenticación
 export default router;

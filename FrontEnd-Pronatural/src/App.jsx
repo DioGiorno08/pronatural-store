@@ -39,6 +39,8 @@ import { ADMIN_PREFIX } from './config';
 
 import NotFound from './frontend-clientes/pages/NotFound';
 import ErrorBoundary from './components/common/ErrorBoundary';
+import ScrollToTop from './components/common/ScrollToTop';
+import RouteProgressBar from './components/common/RouteProgressBar';
 
 function App() {
   return (
@@ -47,6 +49,8 @@ function App() {
         <GlobalDataProvider>
         <CartProvider>
           <BrowserRouter>
+            <ScrollToTop />
+            <RouteProgressBar />
             <Toaster
               position="top-right"
               toastOptions={{

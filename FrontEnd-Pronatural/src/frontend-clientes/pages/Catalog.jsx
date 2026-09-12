@@ -1,10 +1,11 @@
 import { useSearchParams } from 'react-router-dom';
 import { useGlobalData } from '../../context/GlobalDataContext';
 import ProductCard from '../../components/catalog/ProductCard';
+import ProductSkeleton from '../../components/catalog/ProductSkeleton';
 import { useState } from 'react';
 
 export default function Catalog() {
-  const { products: adminProducts, categories: adminCategories } = useGlobalData();
+  const { products: adminProducts, categories: adminCategories, isLoading } = useGlobalData();
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedCategory = searchParams.get('category') || 'TODOS';
   const searchQuery = searchParams.get('q') || '';
@@ -166,7 +167,13 @@ export default function Catalog() {
       </div>
 
       {/* LISTADO DE PRODUCTOS */}
-      {products.length === 0 ? (
+      {isLoading ? (
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 sm:gap-x-10 gap-y-12 md:gap-y-16">
+          {Array.from({ length: 8 }).map((_, index) => (
+            <ProductSkeleton key={`skeleton-${index}`} />
+          ))}
+        </div>
+      ) : products.length === 0 ? (
         <div className="py-24 text-center">
           <div className="w-16 h-16 bg-[#f4f3ec] rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400">
             <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
@@ -177,7 +184,7 @@ export default function Catalog() {
           <p className="text-[11px] text-gray-400 mt-1">Prueba seleccionando otra categoría o borra los filtros de búsqueda.</p>
           <button
             onClick={() => { handleCategorySelect('TODOS'); handleSearchChange({ target: { value: '' } }); }}
-            className="mt-6 px-5 py-2.5 bg-[#0a2016] text-white text-[10px] font-bold tracking-widest uppercase rounded-full hover:bg-[#123827] transition-colors cursor-pointer"
+            className="mt-6 px-5 py-2.5 bg-[#0a2016] text-white text-[10px] font-bold tracking-widest uppercase rounded-full hover:bg-[#123827] transition-colors cursor-pointer shadow-sm"
           >
             Ver todos los productos
           </button>

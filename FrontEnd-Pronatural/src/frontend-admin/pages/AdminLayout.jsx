@@ -1,8 +1,9 @@
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useGlobalData } from '../../context/GlobalDataContext';
 import { ADMIN_PREFIX } from '../../config';
+import PageTransition from '../../components/common/PageTransition';
 const IconLogo = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21Z" fill="#75e29f" />
@@ -432,6 +433,7 @@ function AdminTopbar({ toggleSidebar }) {
 }
 export default function AdminLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const location = useLocation();
 
   return (
     <div className="flex h-screen bg-[#0d1114] font-sans overflow-hidden">
@@ -439,7 +441,9 @@ export default function AdminLayout() {
       <div className="flex-1 flex flex-col min-h-screen overflow-hidden relative">
         <AdminTopbar toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
         <main className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
-          <Outlet />
+          <PageTransition>
+            <Outlet />
+          </PageTransition>
         </main>
         <footer className="hidden md:flex absolute bottom-0 left-0 right-0 px-8 py-4 items-center justify-between pointer-events-none">
           <p className="text-[#4ade80] text-[11px] font-bold tracking-wider pointer-events-auto">Pro Natural</p>

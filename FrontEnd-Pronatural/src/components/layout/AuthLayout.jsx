@@ -9,9 +9,9 @@ export default function AuthLayout({ leftPanel, children }) {
         {leftPanel}
       </div>
 
-      {/* Panel derecho: contiene el formulario de autenticación */}
+      {/* Panel derecho: contiene el formulario de autenticación con transición suave */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-12 lg:p-24 overflow-y-auto">
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-md page-transition">
           {/* Contenido del formulario pasado como prop (Login, Register, etc.) */}
           {children}
         </div>

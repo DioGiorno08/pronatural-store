@@ -47,13 +47,36 @@ export const AuthProvider = ({ children }) => {
       const decoded = decodeJwt(token);
       if (decoded) {
         setIsAuthenticated(true);
-        setUser({
+        const initialUser = {
           id: decoded.id || savedUser?.id,
           role: decoded.userType || savedUser?.role || 'Admin',
           email: decoded.email || savedUser?.email || 'admin@pronatural.com',
           name: decoded.name || savedUser?.name || 'Usuario Pro Natural',
-          phone: decoded.phone || ''
-        });
+          phone: decoded.phone || savedUser?.phone || ''
+        };
+        setUser(initialUser);
+
+        // Sincronizar con la base de datos para obtener teléfono y nombre más recientes
+        api.getProfile().then(profile => {
+          if (profile && profile.name) {
+            setUser(prev => ({
+              ...prev,
+              name: profile.name,
+              email: profile.email || prev?.email,
+              phone: profile.phone || '',
+              role: profile.role || prev?.role
+            }));
+            try {
+              localStorage.setItem('authUserFallback', JSON.stringify({
+                ...initialUser,
+                name: profile.name,
+                email: profile.email || initialUser.email,
+                phone: profile.phone || '',
+                role: profile.role || initialUser.role
+              }));
+            } catch (e) {}
+          }
+        }).catch(() => {});
       } else if (savedUser) {
         setIsAuthenticated(true);
         setUser(savedUser);
@@ -63,7 +86,8 @@ export const AuthProvider = ({ children }) => {
           id: 'dev-fallback-id',
           role: 'Admin',
           email: 'admin@pronatural.com',
-          name: 'Administrador Pro Natural'
+          name: 'Administrador Pro Natural',
+          phone: ''
         });
       }
     } else if (savedUser) {
@@ -210,6 +234,22 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const updateUserProfile = async (profileData) => {
+    try {
+      const res = await api.updateProfile(profileData);
+      if (res && res.user) {
+        setUser(prev => ({ ...prev, ...res.user }));
+        try {
+          localStorage.setItem('authUserFallback', JSON.stringify(res.user));
+        } catch (e) {}
+      }
+      return res;
+    } catch (e) {
+      console.error("Error al actualizar perfil:", e);
+      throw e;
+    }
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -221,7 +261,8 @@ export const AuthProvider = ({ children }) => {
       recoverPassword,
       recoverCustomerPassword,
       logout,
-      forceChangePassword
+      forceChangePassword,
+      updateUserProfile
     }}>
       {children}
     </AuthContext.Provider>

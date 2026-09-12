@@ -1,10 +1,11 @@
 import ajustesModel from "../models/AjustesSistema.js";
+import adminModel from "../models/Usuarios.js";
 import { config } from "../../config.js";
 import { sendEmail } from "../utils/sendMailMailjet.js";
 
 const contactoController = {};
 
-// Enviar mensaje del formulario de contacto al correo del administrador mediante Mailjet API
+// Enviar mensaje del formulario de contacto al correo de los administradores
 contactoController.sendMessage = async (req, res) => {
   try {
     const { name, email, category, message } = req.body;
@@ -19,11 +20,40 @@ contactoController.sendMessage = async (req, res) => {
       return res.status(400).json({ message: "El formato de correo no es válido." });
     }
 
-    // Obtener el correo del administrador (config o DB)
+    // Obtener las cuentas de los administradores
+    let adminEmails = [];
+
+    try {
+      const admins = await adminModel.find({}, "correo email").lean();
+      admins.forEach(a => {
+        const mail = a.correo || a.email;
+        if (mail && mail.includes("@") && !adminEmails.includes(mail.trim().toLowerCase())) {
+          adminEmails.push(mail.trim().toLowerCase());
+        }
+      });
+    } catch (dbErr) {
+      console.warn("No se pudieron cargar administradores de la base de datos:", dbErr.message);
+    }
+
+    // Buscar en ajustes del sistema
     const ajustes = await ajustesModel.findOne();
-    let adminEmail = config.email.user_email;
-    if (ajustes?.email && ajustes.email.includes("@") && !ajustes.email.toLowerCase().includes("pronatural.com")) {
-      adminEmail = ajustes.email;
+    if (ajustes?.email && ajustes.email.includes("@")) {
+      const ajEmail = ajustes.email.trim().toLowerCase();
+      if (!adminEmails.includes(ajEmail)) {
+        adminEmails.push(ajEmail);
+      }
+    }
+
+    // Fallback a variable de entorno configurada
+    if (config.email?.user_email && config.email.user_email.includes("@")) {
+      const envEmail = config.email.user_email.trim().toLowerCase();
+      if (!adminEmails.includes(envEmail)) {
+        adminEmails.push(envEmail);
+      }
+    }
+
+    if (adminEmails.length === 0) {
+      adminEmails.push("mam270508@gmail.com");
     }
 
     const categoryText =
@@ -37,32 +67,36 @@ contactoController.sendMessage = async (req, res) => {
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 25px; background-color: #0d1114; color: #ffffff; border-radius: 12px; border: 1px solid #1b4332;">
         <div style="text-align: center; padding-bottom: 20px; border-bottom: 1px solid #1f2937;">
           <h2 style="color: #30b466; margin: 0; font-size: 22px;">🌿 ProNatural - Nuevo Mensaje de Contacto</h2>
-          <p style="color: #9ca3af; font-size: 13px; margin-top: 5px;">Has recibido una nueva consulta a través del portal web.</p>
+          <p style="color: #9ca3af; font-size: 13px; margin-top: 5px;">Has recibido una nueva consulta a través del portal web de clientes.</p>
         </div>
 
         <div style="margin: 25px 0; background-color: #161b1e; padding: 20px; border-radius: 10px; border-left: 4px solid #30b466;">
-          <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>Remitente:</strong> ${name}</p>
-          <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>Correo de Contacto:</strong> <a href="mailto:${email}" style="color: #4ade80; text-decoration: none;">${email}</a></p>
+          <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>Remitente / Usuario:</strong> ${name}</p>
+          <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>Correo del Usuario:</strong> <a href="mailto:${email}" style="color: #4ade80; text-decoration: none;">${email}</a></p>
           <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>Asunto / Categoría:</strong> <span style="background-color: #1b4332; color: #4ade80; padding: 3px 8px; border-radius: 4px; font-size: 12px;">${categoryText}</span></p>
           <p style="margin: 15px 0 5px 0; font-size: 14px; font-weight: bold; color: #9ca3af;">Mensaje:</p>
           <div style="background-color: #0d1114; padding: 15px; border-radius: 8px; color: #e5e7eb; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${message}</div>
         </div>
 
-        <div style="text-align: center; border-top: 1px solid #1f2937; pt: 15px; font-size: 12px; color: #6b7280;">
-          <p style="margin: 0;">Mensaje enviado desde el formulario de contacto ProNatural vía Mailjet.</p>
+        <div style="text-align: center; border-top: 1px solid #1f2937; padding-top: 15px; font-size: 12px; color: #6b7280;">
+          <p style="margin: 0;">Puedes responder directamente a este correo para comunicarte con <strong>${email}</strong>.</p>
         </div>
       </div>
     `;
 
-    // Enviar el correo usando la utility de Mailjet
-    try {
-      await sendEmail(
-        adminEmail,
-        `[Contacto Web] ${categoryText} - de ${name}`,
-        htmlContent
-      );
-    } catch (mailErr) {
-      console.warn("[MAILJET FALLBACK] Error al enviar mensaje de contacto con Mailjet:", mailErr.message);
+    // Enviar el correo a los administradores indicando el replyTo del remitente
+    for (const targetAdmin of adminEmails) {
+      try {
+        await sendEmail(
+          targetAdmin,
+          `[Contacto Web] ${categoryText} - De: ${name} (${email})`,
+          htmlContent,
+          null,
+          email.trim()
+        );
+      } catch (mailErr) {
+        console.warn(`[EMAIL ERROR] Fallo al enviar al admin ${targetAdmin}:`, mailErr.message);
+      }
     }
 
     return res.status(200).json({ message: "Mensaje enviado exitosamente al administrador." });

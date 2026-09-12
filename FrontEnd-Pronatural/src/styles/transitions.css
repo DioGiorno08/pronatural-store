@@ -1,0 +1,46 @@
+/* ============================================================
+   ESTILOS Y ANIMACIONES DE TRANSICIÓN PRONATURAL (100% GARANTIZADO)
+   Este archivo es procesado directamente por Vite sin ser purgado por Tailwind.
+   ============================================================ */
+
+/* Animación cinemática de entrada para páginas de clientes y admin */
+@keyframes pageEnterCinema {
+  0% {
+    opacity: 0;
+    transform: translateY(28px) scale(0.985);
+    filter: blur(4px);
+  }
+  40% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+.page-transition {
+  animation: pageEnterCinema 0.45s cubic-bezier(0.16, 1, 0.3, 1) both !important;
+  will-change: opacity, transform, filter;
+}
+
+/* Barra superior luminosa de progreso de navegación */
+@keyframes routeProgress {
+  0% {
+    width: 0%;
+    opacity: 1;
+  }
+  60% {
+    width: 85%;
+    opacity: 1;
+  }
+  100% {
+    width: 100%;
+    opacity: 0;
+  }
+}
+
+.animate-route-progress {
+  animation: routeProgress 0.45s ease-out forwards;
+}

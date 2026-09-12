@@ -24,6 +24,7 @@ export default function AdminRegister() {
       await api.register({
         name: `${data.firstName} ${data.lastName}`,
         email: data.email,
+        phone: data.phone,
         password: data.password
       });
       toast.success('Código de verificación enviado al correo');

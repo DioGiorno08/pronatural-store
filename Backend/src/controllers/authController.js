@@ -12,7 +12,8 @@ const authController = {};
 // Registro de usuario administrador / empleado
 authController.register = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, phone, telefono } = req.body;
+    const rawPhone = (phone || telefono || "").trim();
 
     // Verificar si el correo ya existe
     const existsAdmin = await usersModel.findOne({ correo: email });
@@ -24,9 +25,9 @@ authController.register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const randomNumber = crypto.randomBytes(3).toString("hex");
 
-    // Guardar temporalmente en un token
+    // Guardar temporalmente en un token incluyendo el teléfono
     const token = jwt.sign(
-      { randomNumber, name, email, password: hashedPassword },
+      { randomNumber, name, email, password: hashedPassword, phone: rawPhone },
       config.JWT.secret,
       { expiresIn: "15m" }
     );
@@ -79,7 +80,7 @@ authController.verifyCode = async (req, res) => {
     if (!token) return res.status(400).json({ message: "La sesión de verificación ha expirado." });
 
     const decoded = jwt.verify(token, config.JWT.secret);
-    const { randomNumber: storedCode, name, email, password } = decoded;
+    const { randomNumber: storedCode, name, email, password, phone } = decoded;
 
     if (inputCode !== storedCode) {
       return res.status(400).json({ message: "Código inválido" });
@@ -89,6 +90,7 @@ authController.verifyCode = async (req, res) => {
       nombre: name,
       correo: email,
       contraseña: password,
+      telefono: phone || "",
       isVerified: true,
     });
 
@@ -169,9 +171,11 @@ authController.login = async (req, res) => {
     user.timeOut = null;
     await user.save();
 
-    // Generar token JWT y cookie de sesión
+    const userPhone = user.telefono || user.phone || "";
+
+    // Generar token JWT y cookie de sesión incluyendo teléfono
     const token = jwt.sign(
-      { id: user._id, userType: role, email: user.correo, name: user.nombre },
+      { id: user._id, userType: role, email: user.correo, name: user.nombre, phone: userPhone },
       config.JWT.secret,
       { expiresIn: "1d" }
     );
@@ -192,6 +196,7 @@ authController.login = async (req, res) => {
         name: user.nombre,
         email: user.correo,
         role: role,
+        phone: userPhone,
       },
     });
   } catch (error) {
@@ -371,6 +376,99 @@ authController.changePassword = async (req, res) => {
   } catch (error) {
     console.error("Error en changePassword:", error);
     return res.status(500).json({ message: "Error al actualizar contraseña: " + error.message });
+  }
+};
+
+// Obtener perfil fresco desde la base de datos para el usuario logueado
+authController.getProfile = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    const userRole = req.user?.userType || req.user?.role;
+    const userEmail = req.user?.email;
+
+    let dbUser = null;
+    if (userId) {
+      dbUser = await usersModel.findById(userId);
+      if (!dbUser) dbUser = await empleadosModel.findById(userId);
+      if (!dbUser) dbUser = await clientesModel.findById(userId);
+    }
+    if (!dbUser && userEmail) {
+      const emailRegex = new RegExp("^" + userEmail.toLowerCase().trim() + "$", "i");
+      dbUser = await usersModel.findOne({ correo: emailRegex });
+      if (!dbUser) dbUser = await empleadosModel.findOne({ correo: emailRegex });
+      if (!dbUser) dbUser = await clientesModel.findOne({ $or: [{ correo: emailRegex }, { email: emailRegex }] });
+    }
+
+    if (!dbUser) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    const name = dbUser.nombre || dbUser.name || "";
+    const email = dbUser.correo || dbUser.email || "";
+    const phone = dbUser.telefono || dbUser.phone || "";
+    const role = dbUser.rol || userRole || "Admin";
+
+    return res.status(200).json({
+      id: dbUser._id,
+      name,
+      email,
+      phone,
+      role: role === "Employee" ? "Employee" : (role === "Customer" ? "Customer" : "Admin")
+    });
+  } catch (error) {
+    console.error("Error en getProfile:", error);
+    return res.status(500).json({ message: "Error al obtener perfil: " + error.message });
+  }
+};
+
+// Actualizar nombre y teléfono del perfil autenticado
+authController.updateProfile = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    const userEmail = req.user?.email;
+    const { name, phone } = req.body;
+
+    let dbUser = null;
+    if (userId) {
+      dbUser = await usersModel.findById(userId);
+      if (!dbUser) dbUser = await empleadosModel.findById(userId);
+      if (!dbUser) dbUser = await clientesModel.findById(userId);
+    }
+    if (!dbUser && userEmail) {
+      const emailRegex = new RegExp("^" + userEmail.toLowerCase().trim() + "$", "i");
+      dbUser = await usersModel.findOne({ correo: emailRegex });
+      if (!dbUser) dbUser = await empleadosModel.findOne({ correo: emailRegex });
+      if (!dbUser) dbUser = await clientesModel.findOne({ $or: [{ correo: emailRegex }, { email: emailRegex }] });
+    }
+
+    if (!dbUser) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    if (name !== undefined) {
+      dbUser.nombre = name.trim();
+      if (dbUser.name !== undefined) dbUser.name = name.trim();
+    }
+    if (phone !== undefined) {
+      dbUser.telefono = phone.trim();
+      if (dbUser.phone !== undefined) dbUser.phone = phone.trim();
+    }
+
+    await dbUser.save();
+
+    return res.status(200).json({
+      message: "Perfil actualizado correctamente",
+      user: {
+        id: dbUser._id,
+        name: dbUser.nombre || dbUser.name,
+        email: dbUser.correo || dbUser.email,
+        phone: dbUser.telefono || dbUser.phone || "",
+        role: req.user?.userType || "Admin"
+      }
+    });
+  } catch (error) {
+    console.error("Error en updateProfile:", error);
+    return res.status(500).json({ message: "Error al actualizar perfil: " + error.message });
   }
 };
 

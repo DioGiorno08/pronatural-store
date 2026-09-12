@@ -22,20 +22,45 @@ async function apiRequest(endpoint, options = {}) {
   try {
     const response = await fetch(url, config);
     if (!response.ok) {
-      const errorText = await response.text();
-      let errorMessage = 'Error en la petición al servidor';
+      let serverMessage = '';
       try {
+        const errorText = await response.text();
         const parsed = JSON.parse(errorText);
-        if (parsed.message) errorMessage = parsed.message;
+        if (parsed.message) serverMessage = parsed.message;
+        else if (parsed.error) serverMessage = parsed.error;
       } catch (e) {
-        errorMessage = errorText;
+        // No es JSON estructurado
       }
-      throw new Error(errorMessage);
+
+      let errorMessage = serverMessage;
+      if (!errorMessage) {
+        if (response.status === 400) {
+          errorMessage = 'Los datos enviados no son válidos. Revisa el formulario.';
+        } else if (response.status === 401) {
+          errorMessage = 'Sesión no autorizada o caducada. Inicia sesión nuevamente.';
+        } else if (response.status === 403) {
+          errorMessage = 'No cuentas con los permisos requeridos para esta acción.';
+        } else if (response.status === 404) {
+          errorMessage = 'El recurso solicitado no fue encontrado.';
+        } else if (response.status === 429) {
+          errorMessage = 'Has alcanzado el límite de peticiones. Espera unos segundos.';
+        } else if (response.status >= 500) {
+          errorMessage = 'Error en el servidor. Por favor intenta más tarde.';
+        } else {
+          errorMessage = `Error en la petición al servidor (Código ${response.status})`;
+        }
+      }
+
+      const err = new Error(errorMessage);
+      err.status = response.status;
+      throw err;
     }
     return await response.json();
   } catch (error) {
-    if (error.message === 'Failed to fetch') {
-      throw new Error('No se pudo conectar al servidor. Verifica que el backend esté encendido.');
+    if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
+      const netError = new Error('No se pudo conectar al servidor. Verifica que el backend esté encendido.');
+      netError.isNetworkError = true;
+      throw netError;
     }
     if (error.message !== 'Access denied') {
       console.warn(`[API FAILED] para: ${endpoint}. Razón:`, error.message);
@@ -143,6 +168,11 @@ export const api = {
   login: (email, password) => apiRequest('/auth/login', {
     method: 'POST',
     body: JSON.stringify({ email, password })
+  }),
+  getProfile: () => apiRequest('/auth/profile'),
+  updateProfile: (profileData) => apiRequest('/auth/profile', {
+    method: 'PUT',
+    body: JSON.stringify(profileData)
   }),
   changePassword: (data) => apiRequest('/auth/changePassword', {
     method: 'POST',

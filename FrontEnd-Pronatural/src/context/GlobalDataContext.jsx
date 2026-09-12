@@ -41,11 +41,13 @@ export function GlobalDataProvider({ children }) {
   const [users, setUsers] = useState([]);       // Empleados del sistema
   const [customers, setCustomers] = useState([]); // Clientes registrados
   const [config, setConfig] = useState(null);   // Configuración del sistema (ajustes)
+  const [isLoading, setIsLoading] = useState(true); // Estado de carga inicial
 
   // Cargar todos los datos desde el backend al iniciar la aplicación
   useEffect(() => {
     const fetchAllData = async () => {
       try {
+        setIsLoading(true);
         // Verificar el token del usuario para saber si es admin o empleado
         const token = Cookies.get('authCookie') || (typeof localStorage !== 'undefined' ? localStorage.getItem('authCookieFallback') : null);
         const decoded = token ? decodeJwt(token) : null;
@@ -73,6 +75,8 @@ export function GlobalDataProvider({ children }) {
         setConfig(apiConfig);
       } catch (error) {
         console.error("Error loading data from backend:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchAllData();
@@ -415,6 +419,7 @@ export function GlobalDataProvider({ children }) {
   return (
     // Proveer todos los datos y funciones a los componentes hijos
     <GlobalDataContext.Provider value={{
+      isLoading,
       products,
       addProduct,
       updateProduct,

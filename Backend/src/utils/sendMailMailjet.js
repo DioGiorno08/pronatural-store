@@ -21,7 +21,7 @@ const getMailjetClient = () => {
   return mailjetClient;
 };
 
-const sendViaNodemailer = async (to, subject, html, attachments = null) => {
+const sendViaNodemailer = async (to, subject, html, attachments = null, replyTo = null) => {
   const userEmail = config.email.user_email;
   const userPassword = config.email.user_password;
 
@@ -43,6 +43,7 @@ const sendViaNodemailer = async (to, subject, html, attachments = null) => {
     to,
     subject,
     html,
+    ...(replyTo && { replyTo }),
   };
 
   if (attachments && Array.isArray(attachments) && attachments.length > 0) {
@@ -64,8 +65,9 @@ const sendViaNodemailer = async (to, subject, html, attachments = null) => {
  * @param {string} subject - Asunto del correo
  * @param {string} html - Contenido HTML del correo
  * @param {Array} attachments - Lista opcional de adjuntos (archivos PDF, imágenes, etc.)
+ * @param {string} replyTo - Email del remitente real para permitir respuesta directa
  */
-export const sendEmail = async (to, subject, html, attachments = null) => {
+export const sendEmail = async (to, subject, html, attachments = null, replyTo = null) => {
   const client = getMailjetClient();
   if (client) {
     try {
@@ -75,6 +77,7 @@ export const sendEmail = async (to, subject, html, attachments = null) => {
           Name: config.mailjet.fromName || "ProNatural Store",
         },
         To: [{ Email: to }],
+        ...(replyTo && { ReplyTo: { Email: replyTo } }),
         Subject: subject,
         HTMLPart: html,
       };
@@ -99,9 +102,9 @@ export const sendEmail = async (to, subject, html, attachments = null) => {
       return result.body;
     } catch (mjErr) {
       console.warn(`[MAILJET FALLBACK] Error con Mailjet (${mjErr.message}), enviando por Nodemailer Gmail...`);
-      return await sendViaNodemailer(to, subject, html, attachments);
+      return await sendViaNodemailer(to, subject, html, attachments, replyTo);
     }
   } else {
-    return await sendViaNodemailer(to, subject, html, attachments);
+    return await sendViaNodemailer(to, subject, html, attachments, replyTo);
   }
 };

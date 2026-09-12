@@ -85,12 +85,42 @@ const TABS = [
 ];
 
 export default function Settings() {
-  // Datos del usuario autenticado (admin)
-  const { user } = useAuth();
+  // Datos del usuario autenticado (admin) y método de actualización
+  const { user, updateUserProfile } = useAuth();
   // Configuración global y funciones para actualizarla
   const { config, updateConfig, sendInventoryReport } = useGlobalData();
   // Pestaña activa en la navegación de ajustes
   const [activeTab, setActiveTab] = useState("perfil");
+
+  // Estado para visualización y edición del perfil del usuario
+  const [profileData, setProfileData] = useState({
+    name: user?.name || '',
+    phone: user?.phone || ''
+  });
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setProfileData({
+        name: user.name || '',
+        phone: user.phone || ''
+      });
+    }
+  }, [user]);
+
+  const handleSaveProfile = async () => {
+    try {
+      setIsSavingProfile(true);
+      await updateUserProfile(profileData);
+      setIsEditingProfile(false);
+      toast.success("Perfil y teléfono actualizados correctamente");
+    } catch (err) {
+      toast.error(err.message || "Error al actualizar perfil");
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
 
   const defaultConfig = {
     storeName: "Pro Natural", ruc: "", email: "info@pronatural.com", phone: "+503 2222-2222",
@@ -195,10 +225,10 @@ export default function Settings() {
 
   const handleSendReport = async () => {
     try {
-      const loadingToast = toast.loading("Generando y enviando reporte...");
+      const loadingToast = toast.loading("Generando y enviando reporte PDF a los administradores...");
       await sendInventoryReport();
       toast.dismiss(loadingToast);
-      toast.success("Reporte enviado exitosamente al correo");
+      toast.success(`¡Reporte de inventario enviado con éxito a ${user?.email || 'tu correo'}!`);
     } catch (e) {
       toast.dismiss();
       toast.error("Error al enviar el reporte: " + (e.message || ""));
@@ -217,10 +247,17 @@ export default function Settings() {
     setLocalConfig(updatedLocal);
     try {
       await updateConfig(updatedLocal);
+      const diasNombre = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+      const diaTexto = diasNombre[newReporteSemanal.dia ?? 1] || "Lunes";
+      const horaTexto = (newReporteSemanal.hora ?? 8).toString().padStart(2, '0');
+      const minTexto = (newReporteSemanal.minuto ?? 0).toString().padStart(2, '0');
+
       if (field === 'enabled') {
-        toast.success(value ? "Envío automático activado y programado" : "Envío automático desactivado");
+        toast.success(value 
+          ? `Envío automático activado: Cada ${diaTexto} a las ${horaTexto}:${minTexto} hrs` 
+          : "Envío automático desactivado");
       } else {
-        toast.success("Programación de reporte actualizada");
+        toast.success(`Programación actualizada: Todos los ${diaTexto} a las ${horaTexto}:${minTexto} hrs`);
       }
     } catch (e) {
       toast.error("Error al guardar programación: " + (e.message || ""));
@@ -257,23 +294,97 @@ export default function Settings() {
         <div className="w-full flex-1 space-y-6 min-w-0">
           {activeTab === "perfil" && (
             <SectionCard title="Tu Perfil" desc="Informacion personal y rol dentro del sistema.">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-6 mb-6">
-                <div className="w-20 h-20 rounded-full bg-[#1b4332] border-2 border-[#30b466]/40 flex items-center justify-center text-[28px] font-bold text-[#4ade80]">
-                  {(user?.name || "A").charAt(0).toUpperCase()}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-6 pb-6 border-b border-white/5">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-full bg-[#1b4332] border-2 border-[#30b466]/40 flex items-center justify-center text-[24px] font-bold text-[#4ade80]">
+                    {(user?.name || "A").charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="text-[16px] font-semibold text-white">{user?.name || "Administrador"}</p>
+                      <span className="px-2.5 py-0.5 bg-[#1b4332]/60 text-[#4ade80] text-[10px] font-bold rounded-full border border-[#30b466]/30">
+                        {user?.role === 'Admin' ? 'Admin' : (user?.role === 'Employee' ? 'Vendedor' : 'Cliente')}
+                      </span>
+                    </div>
+                    <p className="text-[13px] text-gray-400 mt-0.5">{user?.email || "admin@pronatural.com"}</p>
+                  </div>
                 </div>
+
                 <div>
-                  <p className="text-[15px] font-semibold text-white">{user?.name || "Administrador"}</p>
-                  <p className="text-[13px] text-gray-400">{user?.email || "admin@pronatural.com"}</p>
-                  <span className="mt-1.5 inline-block px-2.5 py-0.5 bg-[#1b4332]/60 text-[#4ade80] text-[10px] font-bold rounded-full border border-[#30b466]/30">
-                    {user?.role || "Administrador"}
-                  </span>
+                  {isEditingProfile ? (
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsEditingProfile(false);
+                          setProfileData({ name: user?.name || '', phone: user?.phone || '' });
+                        }}
+                        className="px-3 py-1.5 text-xs text-gray-400 hover:text-white transition-colors cursor-pointer"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isSavingProfile}
+                        onClick={handleSaveProfile}
+                        className="px-4 py-1.5 bg-[#30b466] hover:bg-[#289e58] text-[#0a110d] font-bold text-xs rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                      >
+                        {isSavingProfile ? "Guardando..." : "Guardar Cambios"}
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingProfile(true)}
+                      className="px-3.5 py-1.5 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white border border-white/10 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                      Modificar Datos
+                    </button>
+                  )}
                 </div>
               </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Field label="Nombre Completo"><Inp value={user?.name || ''} placeholder="Tu nombre completo" disabled /></Field>
-                <Field label="Correo Electronico"><Inp type="email" value={user?.email || ''} placeholder="email@pronatural.com" disabled /></Field>
-                <Field label="Telefono" hint="Solo visible para el equipo interno"><Inp value={formatElSalvadorPhone(user?.phone)} placeholder="+503 7000-0000" disabled /></Field>
-                <Field label="Cargo / Rol"><Inp value={user?.role === 'Admin' ? 'Administrador' : 'Vendedor'} placeholder="Ej: Gerente de Ventas" disabled /></Field>
+                <Field label="Nombre Completo">
+                  {isEditingProfile ? (
+                    <Inp 
+                      value={profileData.name} 
+                      onChange={(e) => setProfileData(p => ({ ...p, name: e.target.value }))}
+                      placeholder="Tu nombre completo" 
+                    />
+                  ) : (
+                    <Inp value={user?.name || ''} placeholder="Tu nombre completo" disabled />
+                  )}
+                </Field>
+
+                <Field label="Correo Electronico" hint="Asociado permanentemente a tu cuenta de acceso">
+                  <Inp type="email" value={user?.email || ''} placeholder="email@pronatural.com" disabled />
+                </Field>
+
+                <Field label="Telefono" hint="Solo visible para el equipo interno">
+                  {isEditingProfile ? (
+                    <PhoneInputField
+                      value={profileData.phone}
+                      onChange={(val) => setProfileData(p => ({ ...p, phone: val }))}
+                      darkTheme={true}
+                    />
+                  ) : (
+                    <Inp 
+                      value={user?.phone ? formatElSalvadorPhone(user.phone) : '+503 (No registrado)'} 
+                      placeholder="+503 7000-0000" 
+                      disabled 
+                    />
+                  )}
+                </Field>
+
+                <Field label="Cargo / Rol">
+                  <Inp 
+                    value={user?.role === 'Admin' ? 'Administrador' : (user?.role === 'Employee' ? 'Empleado / Vendedor' : 'Cliente')} 
+                    placeholder="Ej: Administrador" 
+                    disabled 
+                  />
+                </Field>
               </div>
             </SectionCard>
           )}
@@ -415,31 +526,81 @@ export default function Settings() {
                 <Toggle label="Producto Agotado" desc="Alerta inmediata cuando un articulo llegue a cero." checked={localConfig.notificaciones?.outOfStock} onChange={(val) => handleChange('outOfStock', val, 'notificaciones')} />
               </SectionCard>
               <SectionCard title="Reporte de Inventario PDF" desc="Configura el envío automático del reporte a tu correo.">
-                <Toggle label="Habilitar Envío Automático" desc="Se enviará de forma automática según la configuración." checked={localConfig.reporteSemanal?.enabled} onChange={(val) => handleReporteSemanalChange('enabled', val)} />
+                <Toggle 
+                  label="Habilitar Envío Automático" 
+                  desc="Se enviará de forma automática según la configuración a tu bandeja de entrada." 
+                  checked={localConfig.reporteSemanal?.enabled} 
+                  onChange={(val) => handleReporteSemanalChange('enabled', val)} 
+                />
                 
                 {localConfig.reporteSemanal?.enabled && (
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4 pt-4 border-t border-white/5">
-                    <Field label="Día de la Semana">
-                      <select value={localConfig.reporteSemanal?.dia ?? 1} onChange={(e) => handleReporteSemanalChange('dia', Number(e.target.value))} className="w-full bg-[#0d1114] border border-white/10 rounded-[10px] px-4 py-3 text-[14px] text-white focus:outline-none focus:border-[#4ade80]">
-                        <option value={1}>Lunes</option><option value={2}>Martes</option><option value={3}>Miércoles</option><option value={4}>Jueves</option><option value={5}>Viernes</option><option value={6}>Sábado</option><option value={0}>Domingo</option>
-                      </select>
-                    </Field>
-                    <Field label="Hora (Formato 24h)">
-                      <select value={localConfig.reporteSemanal?.hora ?? 8} onChange={(e) => handleReporteSemanalChange('hora', Number(e.target.value))} className="w-full bg-[#0d1114] border border-white/10 rounded-[10px] px-4 py-3 text-[14px] text-white focus:outline-none focus:border-[#4ade80]">
-                        {[...Array(24).keys()].map(h => <option key={h} value={h}>{h}:00</option>)}
-                      </select>
-                    </Field>
-                    <Field label="Minuto exacto">
-                      <select value={localConfig.reporteSemanal?.minuto ?? 0} onChange={(e) => handleReporteSemanalChange('minuto', Number(e.target.value))} className="w-full bg-[#0d1114] border border-white/10 rounded-[10px] px-4 py-3 text-[14px] text-white focus:outline-none focus:border-[#4ade80]">
-                        {[...Array(60).keys()].map(m => <option key={m} value={m}>:{m.toString().padStart(2, '0')}</option>)}
-                      </select>
-                    </Field>
+                  <div className="mt-4 pt-4 border-t border-white/5 space-y-4">
+                    {/* Banner de estado de programación activa */}
+                    <div className="p-3.5 bg-[#1b4332]/30 border border-[#30b466]/30 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                      <div className="flex items-center gap-2.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#30b466] animate-pulse shrink-0"></span>
+                        <span className="text-gray-200">
+                          Programado para cada <strong>{["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"][localConfig.reporteSemanal?.dia ?? 1]}</strong> a las <strong>{(localConfig.reporteSemanal?.hora ?? 8).toString().padStart(2, '0')}:{(localConfig.reporteSemanal?.minuto ?? 0).toString().padStart(2, '0')} hrs</strong>
+                        </span>
+                      </div>
+                      <span className="text-[11px] text-[#4ade80] font-mono">
+                        Destinatario: {user?.email || 'Administradores'}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <Field label="Día de la Semana">
+                        <select 
+                          value={localConfig.reporteSemanal?.dia ?? 1} 
+                          onChange={(e) => handleReporteSemanalChange('dia', Number(e.target.value))} 
+                          className="w-full bg-[#0d1114] border border-white/10 rounded-[10px] px-4 py-3 text-[14px] text-white focus:outline-none focus:border-[#4ade80]"
+                        >
+                          <option value={1}>Lunes</option>
+                          <option value={2}>Martes</option>
+                          <option value={3}>Miércoles</option>
+                          <option value={4}>Jueves</option>
+                          <option value={5}>Viernes</option>
+                          <option value={6}>Sábado</option>
+                          <option value={0}>Domingo</option>
+                        </select>
+                      </Field>
+                      <Field label="Hora (Formato 24h)">
+                        <select 
+                          value={localConfig.reporteSemanal?.hora ?? 8} 
+                          onChange={(e) => handleReporteSemanalChange('hora', Number(e.target.value))} 
+                          className="w-full bg-[#0d1114] border border-white/10 rounded-[10px] px-4 py-3 text-[14px] text-white focus:outline-none focus:border-[#4ade80]"
+                        >
+                          {[...Array(24).keys()].map(h => (
+                            <option key={h} value={h}>{h.toString().padStart(2, '0')}:00</option>
+                          ))}
+                        </select>
+                      </Field>
+                      <Field label="Minuto exacto">
+                        <select 
+                          value={localConfig.reporteSemanal?.minuto ?? 0} 
+                          onChange={(e) => handleReporteSemanalChange('minuto', Number(e.target.value))} 
+                          className="w-full bg-[#0d1114] border border-white/10 rounded-[10px] px-4 py-3 text-[14px] text-white focus:outline-none focus:border-[#4ade80]"
+                        >
+                          {[...Array(60).keys()].map(m => (
+                            <option key={m} value={m}>:{m.toString().padStart(2, '0')}</option>
+                          ))}
+                        </select>
+                      </Field>
+                    </div>
                   </div>
                 )}
                 
                 <div className="mt-6 pt-6 border-t border-white/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <p className="text-[13px] text-gray-400">¿Necesitas un reporte ahora mismo?</p>
-                  <button onClick={handleSendReport} className="w-full sm:w-auto px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white font-medium text-[13px] rounded-[8px] transition-colors cursor-pointer border border-white/10 whitespace-nowrap">
+                  <div>
+                    <p className="text-[13px] text-gray-300 font-medium">¿Necesitas un reporte ahora mismo?</p>
+                    <p className="text-[11px] text-gray-500">Se generará el PDF y se enviará de inmediato a tu bandeja de entrada ({user?.email || 'Administradores'}).</p>
+                  </div>
+                  <button 
+                    type="button"
+                    onClick={handleSendReport} 
+                    className="w-full sm:w-auto px-5 py-2.5 bg-[#30b466]/15 hover:bg-[#30b466]/25 text-[#4ade80] border border-[#30b466]/30 font-medium text-[13px] rounded-[8px] transition-colors cursor-pointer whitespace-nowrap flex items-center justify-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                     Enviar Reporte Ahora
                   </button>
                 </div>

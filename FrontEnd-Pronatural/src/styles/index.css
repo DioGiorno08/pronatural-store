@@ -8,6 +8,40 @@
   --color-brand-sidebar: #f3f0ea;
   --color-brand-accent: #0f2e20;
   --color-brand-gray: #6b7280;
+
+  --animate-page-enter: pageEnterCinema 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-route-progress: routeProgress 0.45s ease-out forwards;
+
+  @keyframes pageEnterCinema {
+    0% {
+      opacity: 0;
+      transform: translateY(28px) scale(0.985);
+      filter: blur(4px);
+    }
+    40% {
+      opacity: 0.8;
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      filter: blur(0);
+    }
+  }
+
+  @keyframes routeProgress {
+    0% {
+      width: 0%;
+      opacity: 1;
+    }
+    60% {
+      width: 85%;
+      opacity: 1;
+    }
+    100% {
+      width: 100%;
+      opacity: 0;
+    }
+  }
 }
 
 @layer base {
@@ -31,5 +65,42 @@
   }
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: #3f4e48;
+  }
+}
+
+/* Transición cinemática de páginas (a nivel raíz para garantizar compilación) */
+@keyframes pageEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(28px);
+    filter: blur(4px);
+  }
+  60% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+.page-transition {
+  animation: pageEnter 0.42s cubic-bezier(0.16, 1, 0.3, 1) both !important;
+  will-change: opacity, transform, filter;
+}
+
+@keyframes routeProgress {
+  0% {
+    width: 0%;
+    opacity: 1;
+  }
+  70% {
+    width: 85%;
+    opacity: 1;
+  }
+  100% {
+    width: 100%;
+    opacity: 0;
   }
 }

@@ -3,6 +3,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './styles/index.css' // Estilos globales del proyecto
+import './styles/transitions.css' // Animaciones de transición de páginas
 import App from './App.jsx' // Componente principal de la aplicación
 
 // Renderizar la aplicación dentro de StrictMode para detectar problemas en desarrollo

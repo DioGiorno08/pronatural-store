@@ -39,12 +39,20 @@ class ErrorBoundary extends React.Component {
                 </pre>
               )}
             </div>
-            <button
-              onClick={this.handleReload}
-              className="w-full py-3 bg-[#30b466] hover:bg-[#289e58] text-[#0a110d] font-bold text-sm rounded-lg transition-colors cursor-pointer"
-            >
-              Recargar la Página
-            </button>
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <button
+                onClick={() => window.location.href = '/'}
+                className="flex-1 py-3 bg-white/10 hover:bg-white/15 text-white font-bold text-sm rounded-lg transition-colors cursor-pointer border border-white/10"
+              >
+                Volver al Inicio
+              </button>
+              <button
+                onClick={this.handleReload}
+                className="flex-1 py-3 bg-[#30b466] hover:bg-[#289e58] text-[#0a110d] font-bold text-sm rounded-lg transition-colors cursor-pointer shadow-lg shadow-[#30b466]/20"
+              >
+                Recargar la Página
+              </button>
+            </div>
           </div>
         </div>
       );

@@ -9,6 +9,59 @@
     <meta property="og:title" content="ProNatural Store - Tienda Oficial" />
     <meta property="og:description" content="Productos naturales de origen único. Miel, extractos, suplementos y cuidado personal." />
     <title>ProNatural Store - Tienda Oficial</title>
+    <style>
+      /* Salida de página anterior (Exit) */
+      .page-exit-active {
+        opacity: 0 !important;
+        transform: translateY(-16px) scale(0.99) !important;
+        filter: blur(2px) !important;
+        transition: opacity 0.2s ease-in, transform 0.2s ease-in, filter 0.2s ease-in !important;
+        pointer-events: none;
+      }
+
+      /* Entrada cinemática de nueva página (Enter) */
+      @keyframes cinemaPageReveal {
+        0% {
+          opacity: 0;
+          transform: translateY(42px) scale(0.985);
+          filter: blur(5px);
+        }
+        40% {
+          opacity: 0.8;
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+          filter: blur(0);
+        }
+      }
+
+      .page-enter-active,
+      .page-transition,
+      .animate-page-enter {
+        animation: cinemaPageReveal 0.42s cubic-bezier(0.16, 1, 0.3, 1) both !important;
+        will-change: opacity, transform, filter;
+      }
+
+      @keyframes routeProgressBar {
+        0% {
+          width: 0%;
+          opacity: 1;
+        }
+        60% {
+          width: 85%;
+          opacity: 1;
+        }
+        100% {
+          width: 100%;
+          opacity: 0;
+        }
+      }
+
+      .animate-route-progress {
+        animation: routeProgressBar 0.45s ease-out forwards !important;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>

@@ -3,6 +3,7 @@
 import { Outlet } from 'react-router-dom';
 import TopNavbar from './TopNavbar';
 import Footer from './Footer';
+import PageTransition from '../common/PageTransition';
 
 export default function PublicLayout() {
   return (
@@ -11,9 +12,11 @@ export default function PublicLayout() {
       {/* Barra de navegación superior */}
       <TopNavbar />
 
-      {/* Contenido de la página actual (renderizado por React Router) */}
+      {/* Contenido de la página actual envuelto en transición de salida y entrada cinemática */}
       <main className="flex-1 w-full bg-brand-bg">
-        <Outlet />
+        <PageTransition>
+          <Outlet />
+        </PageTransition>
       </main>
 
       {/* Pie de página */}

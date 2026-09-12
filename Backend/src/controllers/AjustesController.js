@@ -1,6 +1,7 @@
 import ajustesModel from "../models/AjustesSistema.js";
 import productsModel from "../models/Productos.js";
 import categoriasModel from "../models/Categorias.js";
+import adminModel from "../models/Usuarios.js";
 import PDFDocument from "pdfkit";
 import cron from "node-cron";
 import { config } from "../../config.js";
@@ -87,6 +88,8 @@ controladoresAjustes.updateConfig = async (req, res) => {
 };
 
 let scheduledJob = null;
+let heartbeatInterval = null;
+let lastSentSignature = "";
 
 // Inicializar o reiniciar la tarea programada (cron job) para el envío automático del PDF
 controladoresAjustes.initCronJob = async () => {
@@ -97,6 +100,10 @@ controladoresAjustes.initCronJob = async () => {
     if (scheduledJob) {
       scheduledJob.stop();
       scheduledJob = null;
+    }
+    if (heartbeatInterval) {
+      clearInterval(heartbeatInterval);
+      heartbeatInterval = null;
     }
 
     // Verificar si el envío automático está activado en los ajustes
@@ -126,6 +133,28 @@ controladoresAjustes.initCronJob = async () => {
         timezone: "America/El_Salvador"
       });
 
+      // Heartbeat de respaldo (verifica cada 30 segundos si coincide día, hora y minuto local)
+      heartbeatInterval = setInterval(async () => {
+        try {
+          const now = new Date();
+          const esTimeStr = now.toLocaleString("en-US", { timeZone: "America/El_Salvador" });
+          const esDate = new Date(esTimeStr);
+          const currentDay = esDate.getDay();
+          const currentHour = esDate.getHours();
+          const currentMinute = esDate.getMinutes();
+
+          const signature = `${currentDay}-${currentHour}-${currentMinute}`;
+
+          if (currentDay === dia && currentHour === hora && currentMinute === minuto && lastSentSignature !== signature) {
+            lastSentSignature = signature;
+            console.log(`[Cron Heartbeat] Coincidencia horaria (${diaTexto} ${hora}:${minutoFormat}). Despachando reporte automático...`);
+            await controladoresAjustes.sendInventoryReport();
+          }
+        } catch (hErr) {
+          console.error("[Cron Heartbeat Error]:", hErr.message);
+        }
+      }, 30000);
+
       console.log(`[Cron Job] Programación activa exitosamente: Todos los ${diaTexto} a las ${hora}:${minutoFormat} hrs (${cronExpression})`);
     } else {
       console.log("[Cron Job] Envío automático de reportes deshabilitado en ajustes.");
@@ -139,7 +168,43 @@ controladoresAjustes.initCronJob = async () => {
 controladoresAjustes.sendInventoryReport = async (req, res) => {
   try {
     const ajustes = await ajustesModel.findOne();
-    const adminEmail = req?.user?.email || ajustes?.email || config.email.user_email;
+
+    // Recopilar correos destinatarios (administradores)
+    let adminEmails = [];
+
+    // 1. Correo de la sesión del usuario si fue solicitado manualmente
+    if (req?.user?.email && req.user.email.includes("@")) {
+      adminEmails.push(req.user.email.trim().toLowerCase());
+    }
+
+    // 2. Administradores registrados en MongoDB
+    try {
+      const admins = await adminModel.find({}, "correo email").lean();
+      admins.forEach(a => {
+        const mail = a.correo || a.email;
+        if (mail && mail.includes("@") && !adminEmails.includes(mail.trim().toLowerCase())) {
+          adminEmails.push(mail.trim().toLowerCase());
+        }
+      });
+    } catch (dbErr) {
+      console.warn("No se pudieron cargar administradores para reporte:", dbErr.message);
+    }
+
+    // 3. Correo en ajustes (si es válido y no es el dummy)
+    if (ajustes?.email && ajustes.email.includes("@") && !ajustes.email.includes("info@pronatural.com")) {
+      const ajMail = ajustes.email.trim().toLowerCase();
+      if (!adminEmails.includes(ajMail)) adminEmails.push(ajMail);
+    }
+
+    // 4. Fallback del .env
+    if (config.email?.user_email && config.email.user_email.includes("@")) {
+      const envMail = config.email.user_email.trim().toLowerCase();
+      if (!adminEmails.includes(envMail)) adminEmails.push(envMail);
+    }
+
+    if (adminEmails.length === 0) {
+      adminEmails.push("20210318@ricaldone.edu.sv");
+    }
 
     // Cargar productos y categorías de la base de datos
     const [products, categories] = await Promise.all([
@@ -295,36 +360,39 @@ controladoresAjustes.sendInventoryReport = async (req, res) => {
       doc.on("end", () => resolve(Buffer.concat(buffers)));
     });
 
-    // Enviar el reporte generado por correo mediante la utility de Mailjet
-    try {
-      await sendEmail(
-        adminEmail,
-        `Reporte de Inventario - ProNatural - ${new Date().toLocaleDateString("es-SV")}`,
-        `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #0d1114; color: #ffffff; border-radius: 10px;">
-          <h2 style="color: #30b466; margin-top: 0;">Reporte de Inventario Generado</h2>
-          <p>Hola,</p>
-          <p>Adjunto a este correo encontrarás el informe detallado de inventario en formato PDF con la paleta oficial de ProNatural.</p>
-          <div style="background-color: #161b1e; padding: 15px; border-left: 4px solid #30b466; margin: 15px 0;">
-            <p style="margin: 0; color: #9ca3af; font-size: 12px;">RESUMEN RÁPIDO:</p>
-            <p style="margin: 5px 0 0 0; color: #ffffff;"><strong>Total Productos:</strong> ${totalProducts}</p>
-            <p style="margin: 3px 0 0 0; color: #ffffff;"><strong>Unidades en Stock:</strong> ${totalStockCount}</p>
-            <p style="margin: 3px 0 0 0; color: #4ade80;"><strong>Valor Total:</strong> $${totalInventoryValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-            <p style="margin: 3px 0 0 0; color: ${lowStockAlertCount > 0 ? '#ef4444' : '#4ade80'};"><strong>Productos en Alerta (<=15):</strong> ${lowStockAlertCount}</p>
-          </div>
-          <p style="font-size: 12px; color: #6b7280;">Este informe fue generado automáticamente por el sistema ProNatural vía Mailjet.</p>
+    // Enviar el reporte generado por correo a todos los administradores
+    const reportSubject = `📊 Reporte de Inventario - ProNatural - ${new Date().toLocaleDateString("es-SV")}`;
+    const reportHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #0d1114; color: #ffffff; border-radius: 10px;">
+        <h2 style="color: #30b466; margin-top: 0;">Reporte de Inventario Generado</h2>
+        <p>Hola Administrador,</p>
+        <p>Adjunto a este correo encontrarás el informe detallado de inventario en formato PDF oficial de ProNatural Store.</p>
+        <div style="background-color: #161b1e; padding: 15px; border-left: 4px solid #30b466; margin: 15px 0; border-radius: 6px;">
+          <p style="margin: 0; color: #9ca3af; font-size: 12px; font-weight: bold;">RESUMEN EJECUTIVO:</p>
+          <p style="margin: 5px 0 0 0; color: #ffffff;"><strong>Total Productos:</strong> ${totalProducts}</p>
+          <p style="margin: 3px 0 0 0; color: #ffffff;"><strong>Unidades en Stock:</strong> ${totalStockCount}</p>
+          <p style="margin: 3px 0 0 0; color: #4ade80;"><strong>Valor Total:</strong> $${totalInventoryValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+          <p style="margin: 3px 0 0 0; color: ${lowStockAlertCount > 0 ? '#ef4444' : '#4ade80'};"><strong>Productos en Alerta (<=15):</strong> ${lowStockAlertCount}</p>
         </div>
-        `,
-        [
-          {
-            filename: `Inventario_ProNatural_${new Date().toISOString().split("T")[0]}.pdf`,
-            content: pdfBuffer,
-            contentType: "application/pdf"
-          }
-        ]
-      );
-    } catch (mailErr) {
-      console.warn("[MAILJET FALLBACK] Error enviando reporte por Mailjet:", mailErr.message);
+        <p style="font-size: 12px; color: #6b7280;">Este informe fue emitido según la configuración de reportes automáticos de ProNatural.</p>
+      </div>
+    `;
+
+    const attachments = [
+      {
+        filename: `Inventario_ProNatural_${new Date().toISOString().split("T")[0]}.pdf`,
+        content: pdfBuffer,
+        contentType: "application/pdf"
+      }
+    ];
+
+    for (const targetAdmin of adminEmails) {
+      try {
+        await sendEmail(targetAdmin, reportSubject, reportHtml, attachments);
+        console.log(`[Reporte Inventario] Enviado exitosamente a: ${targetAdmin}`);
+      } catch (mailErr) {
+        console.warn(`[Reporte Inventario Fallo] No se pudo enviar a ${targetAdmin}:`, mailErr.message);
+      }
     }
 
     if (res) {

@@ -235,7 +235,13 @@ export default function Checkout() {
             <input
               type="email"
               placeholder="EJEMPLO@GMAIL.COM"
-              {...register('email', { required: 'Requerido' })}
+              {...register('email', {
+                required: 'El correo electrónico es requerido',
+                pattern: {
+                  value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                  message: 'Ingresa un correo electrónico válido'
+                }
+              })}
               className={`w-full border-b py-2 text-[12px] bg-transparent focus:outline-none focus:border-brand-dark uppercase transition-colors ${errors.email ? 'border-red-500' : 'border-gray-300'}`}
             />
             {errors.email && <span className="text-red-500 text-[9px] mt-1 block">{errors.email.message}</span>}
@@ -247,7 +253,10 @@ export default function Checkout() {
             <input
               type="text"
               placeholder="JANE DOE"
-              {...register('name', { required: 'Requerido' })}
+              {...register('name', {
+                required: 'El nombre completo es requerido',
+                minLength: { value: 3, message: 'El nombre debe contener al menos 3 caracteres' }
+              })}
               className={`w-full border-b py-2 text-[12px] bg-transparent focus:outline-none focus:border-brand-dark uppercase transition-colors ${errors.name ? 'border-red-500' : 'border-gray-300'}`}
             />
             {errors.name && <span className="text-red-500 text-[9px] mt-1 block">{errors.name.message}</span>}
@@ -260,7 +269,7 @@ export default function Checkout() {
               name="phone"
               control={control}
               rules={{
-                required: 'Teléfono requerido',
+                required: 'El teléfono de contacto es requerido',
                 validate: (val) => isValidPhoneNumber(val) || 'El teléfono debe tener 8 dígitos (ej: +503 7000-0000)'
               }}
               render={({ field }) => (
@@ -278,7 +287,10 @@ export default function Checkout() {
             <input
               type="text"
               placeholder="DIRECCIÓN DE LA CALLE"
-              {...register('address', { required: 'Requerido' })}
+              {...register('address', {
+                required: 'La dirección de entrega es requerida',
+                minLength: { value: 5, message: 'Ingresa una dirección detallada (mínimo 5 caracteres)' }
+              })}
               className={`w-full border-b py-2 text-[12px] bg-transparent focus:outline-none focus:border-brand-dark uppercase transition-colors ${errors.address ? 'border-red-500' : 'border-gray-300'}`}
             />
             {errors.address && <span className="text-red-500 text-[9px] mt-1 block">{errors.address.message}</span>}
@@ -290,7 +302,10 @@ export default function Checkout() {
             <input
               type="text"
               placeholder="SAN SALVADOR"
-              {...register('city', { required: 'Requerido' })}
+              {...register('city', {
+                required: 'La ciudad o departamento es requerido',
+                minLength: { value: 3, message: 'Ingresa al menos 3 caracteres' }
+              })}
               className={`w-full border-b py-2 text-[12px] bg-transparent focus:outline-none focus:border-brand-dark uppercase transition-colors ${errors.city ? 'border-red-500' : 'border-gray-300'}`}
             />
             {errors.city && <span className="text-red-500 text-[9px] mt-1 block">{errors.city.message}</span>}
@@ -302,7 +317,13 @@ export default function Checkout() {
             <input
               type="text"
               placeholder="1101"
-              {...register('zip', { required: 'Requerido' })}
+              {...register('zip', {
+                required: 'El código postal es requerido',
+                pattern: {
+                  value: /^[0-9]{4,6}$/,
+                  message: 'El código postal debe contener entre 4 y 6 dígitos numéricos'
+                }
+              })}
               className={`w-full border-b py-2 text-[12px] bg-transparent focus:outline-none focus:border-brand-dark uppercase transition-colors ${errors.zip ? 'border-red-500' : 'border-gray-300'}`}
             />
             {errors.zip && <span className="text-red-500 text-[9px] mt-1 block">{errors.zip.message}</span>}
