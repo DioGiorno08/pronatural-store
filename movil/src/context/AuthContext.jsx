@@ -2,10 +2,10 @@ import React, { createContext, useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // creamos el contexto de autenticación para compartir la sesión en la app
-export const AuthContext = createContext();
+import { getApiBaseUrl, setApiBaseUrl, resetApiBaseUrl } from "../config/apiConfig";
 
-// URL base de la API del servidor backend (usando la IP local actual de la máquina)
-const API = "http://172.20.10.3:4000/api";
+// creamos el contexto de autenticación para compartir la sesión en la app
+export const AuthContext = createContext();
 
 // Proveedor del contexto que envuelve la aplicación
 export const AuthProvider = ({ children }) => {
@@ -15,11 +15,16 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   // estado para controlar si la app está verificando la sesión inicial
   const [loading, setLoading] = useState(true);
+  // estado para la URL activa del servidor
+  const [apiUrl, setApiUrl] = useState("http://172.20.10.3:4000/api");
 
-  // al montar el componente, verificamos si existe una sesión previa guardada
+  // al montar el componente, verificamos si existe una sesión previa guardada y la URL de API
   useEffect(() => {
     const loadSession = async () => {
       try {
+        const currentApi = await getApiBaseUrl();
+        setApiUrl(currentApi);
+
         const savedToken = await AsyncStorage.getItem("authCookie");
         const savedUser = await AsyncStorage.getItem("userInfo");
 
@@ -37,9 +42,23 @@ export const AuthProvider = ({ children }) => {
     loadSession();
   }, []);
 
+  // función para actualizar la URL del backend
+  const changeApiUrl = async (newUrl) => {
+    const updated = await setApiBaseUrl(newUrl);
+    setApiUrl(updated);
+    return updated;
+  };
+
+  const restoreDefaultApiUrl = async () => {
+    const def = await resetApiBaseUrl();
+    setApiUrl(def);
+    return def;
+  };
+
   // función para iniciar sesión consumiendo el endpoint del backend
   const login = async (email, password) => {
-    const response = await fetch(`${API}/auth/login`, {
+    const currentApi = apiUrl || (await getApiBaseUrl());
+    const response = await fetch(`${currentApi}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: email.toLowerCase().trim(), password }),
@@ -65,7 +84,8 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       if (token) {
-        await fetch(`${API}/auth/logout`, {
+        const currentApi = apiUrl || (await getApiBaseUrl());
+        await fetch(`${currentApi}/auth/logout`, {
           method: "POST",
           headers: { Cookie: `authCookie=${token}` },
           credentials: "include",
@@ -83,7 +103,8 @@ export const AuthProvider = ({ children }) => {
 
   // función auxiliar para realizar peticiones HTTP incluyendo la cookie de autenticación
   const authFetch = async (endpoint, options = {}) => {
-    const res = await fetch(`${API}${endpoint}`, {
+    const currentApi = apiUrl || (await getApiBaseUrl());
+    const res = await fetch(`${currentApi}${endpoint}`, {
       headers: {
         "Content-Type": "application/json",
         ...(token ? { Cookie: `authCookie=${token}` } : {}),
@@ -103,7 +124,19 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout, authFetch }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        loading,
+        apiUrl,
+        login,
+        logout,
+        authFetch,
+        changeApiUrl,
+        restoreDefaultApiUrl,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

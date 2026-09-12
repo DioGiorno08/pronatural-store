@@ -12,9 +12,7 @@ import {
   ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-
-// URL base para consultar los endpoints de recuperación del servidor
-const API = "http://172.20.10.3:4000/api";
+import { getApiBaseUrl } from "../config/apiConfig";
 
 const ForgotPasswordScreen = ({ navigation }) => {
   // estados para gestionar los pasos del flujo de recuperación
@@ -35,7 +33,8 @@ const ForgotPasswordScreen = ({ navigation }) => {
 
     setLoading(true);
     try {
-      const res = await fetch(`${API}/auth/recoveryAdmin/requestCode`, {
+      const apiBase = await getApiBaseUrl();
+      const res = await fetch(`${apiBase}/auth/recoveryAdmin/requestCode`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.toLowerCase().trim() }),
@@ -64,7 +63,8 @@ const ForgotPasswordScreen = ({ navigation }) => {
 
     setLoading(true);
     try {
-      const res = await fetch(`${API}/auth/recoveryAdmin/verifyCode`, {
+      const apiBase = await getApiBaseUrl();
+      const res = await fetch(`${apiBase}/auth/recoveryAdmin/verifyCode`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.toLowerCase().trim(), code }),
@@ -100,7 +100,8 @@ const ForgotPasswordScreen = ({ navigation }) => {
 
     setLoading(true);
     try {
-      const res = await fetch(`${API}/auth/recoveryAdmin/newPassword`, {
+      const apiBase = await getApiBaseUrl();
+      const res = await fetch(`${apiBase}/auth/recoveryAdmin/newPassword`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.toLowerCase().trim(), code, newPassword: newPass }),

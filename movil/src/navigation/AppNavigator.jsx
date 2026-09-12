@@ -9,8 +9,8 @@ import WelcomeScreen from "../screens/WelcomeScreen";
 import LoginScreen from "../screens/LoginScreen";
 import ForgotPasswordScreen from "../screens/ForgotPasswordScreen";
 
-// importamos el navegador de pestañas del panel administrativo
-import MainTabNavigator from "./MainTabNavigator";
+// importamos el navegador lateral con menú de hamburguesa del panel administrativo
+import AdminDrawerNavigator from "./AdminDrawerNavigator";
 
 // importamos el hook useAuth para controlar el acceso y sesión del usuario
 import useAuth from "../hooks/useAuth";
@@ -54,8 +54,8 @@ const AppNavigator = () => {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ animation: "fade" }}>
         {user ? (
-          // Usuario autenticado: acceso exclusivo al panel administrativo (AdminMain)
-          <Stack.Screen name="AdminMain" component={MainTabNavigator} options={{ headerShown: false }} />
+          // Usuario autenticado: acceso exclusivo al portal administrativo con menú de hamburguesa
+          <Stack.Screen name="AdminMain" component={AdminDrawerNavigator} options={{ headerShown: false }} />
         ) : (
           // Usuario cerrado de sesión o no autenticado: redirige inmediatamente a Login y bloquea acceso a las funciones
           <>

@@ -37,7 +37,7 @@ const InfoRow = ({ icon, label, value }) => {
 
 const ProfileScreen = () => {
   // utilizamos el hook useAuth para obtener el usuario activo y las funciones de sesión
-  const { user, logout, authFetch } = useAuth();
+  const { user, logout, authFetch, apiUrl } = useAuth();
 
   const [showChangePwd, setShowChangePwd] = useState(false);
   const [currentPwd, setCurrentPwd]       = useState("");
@@ -128,6 +128,18 @@ const ProfileScreen = () => {
         <InfoRow icon="person"  label="Nombre completo"     value={user?.name} />
         <InfoRow icon="mail"    label="Correo electrónico"  value={user?.email} />
         <InfoRow icon="key"     label="Tipo de cuenta"      value={roleLabel} />
+      </Section>
+
+      <Section title="Conexión del Sistema">
+        <InfoRow icon="server" label="Servidor Activo" value={apiUrl} />
+        <TouchableOpacity
+          style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 16, borderTopWidth: 1, borderTopColor: "rgba(255, 255, 255, 0.05)" }}
+          onPress={() => navigation?.navigate && navigation.navigate("Settings")}
+          activeOpacity={0.7}
+        >
+          <Text style={{ color: "#30b466", fontSize: 13, fontWeight: "600" }}>Cambiar o Probar Servidor en Ajustes</Text>
+          <Ionicons name="chevron-forward" size={16} color="#30b466" />
+        </TouchableOpacity>
       </Section>
 
       <Section title="Seguridad">

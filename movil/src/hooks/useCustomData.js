@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// URL base para realizar las peticiones a la API del backend
-const API_URL = "http://172.20.10.3:4000/api";
+import { getApiBaseUrl } from "../config/apiConfig";
 
 const useCustomData = (endpoint = "/products") => {
   const [data, setData] = useState([]);
@@ -13,8 +12,9 @@ const useCustomData = (endpoint = "/products") => {
     try {
       setLoading(true);
       const token = await AsyncStorage.getItem("authCookie");
+      const apiBase = await getApiBaseUrl();
 
-      const response = await fetch(`${API_URL}${endpoint}`, {
+      const response = await fetch(`${apiBase}${endpoint}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",

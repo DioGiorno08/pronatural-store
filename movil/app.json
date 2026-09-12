@@ -15,6 +15,12 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.pronatural.admin",
+      "permissions": [
+        "INTERNET",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#0a0d0f",
         "foregroundImage": "./assets/android-icon-foreground.png",
