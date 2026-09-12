@@ -16,6 +16,7 @@
     },
     "android": {
       "package": "com.pronatural.admin",
+      "versionCode": 1,
       "permissions": [
         "INTERNET",
         "READ_EXTERNAL_STORAGE",
