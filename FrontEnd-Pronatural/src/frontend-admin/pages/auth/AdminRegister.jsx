@@ -76,7 +76,11 @@ export default function AdminRegister() {
                   <input
                     type="text"
                     placeholder="Carlos"
-                    {...register("firstName", { required: "Requerido" })}
+                    {...register("firstName", { 
+                      required: "El nombre es obligatorio",
+                      minLength: { value: 2, message: "El nombre debe tener al menos 2 caracteres" },
+                      pattern: { value: /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/, message: "El nombre solo debe contener letras y espacios" }
+                    })}
                     className={`w-full bg-[#0d1114] border ${errors.firstName ? 'border-red-500/50' : 'border-white/10'} rounded-[10px] px-4 py-3 text-[14px] text-white placeholder-gray-600 focus:outline-none focus:border-[#4ade80] transition-colors`}
                   />
                   {errors.firstName && <p className="text-red-400 text-[11px] mt-1.5 font-medium">{errors.firstName.message}</p>}
@@ -86,7 +90,11 @@ export default function AdminRegister() {
                   <input
                     type="text"
                     placeholder="Gómez"
-                    {...register("lastName", { required: "Requerido" })}
+                    {...register("lastName", { 
+                      required: "El apellido es obligatorio",
+                      minLength: { value: 2, message: "El apellido debe tener al menos 2 caracteres" },
+                      pattern: { value: /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/, message: "El apellido solo debe contener letras y espacios" }
+                    })}
                     className={`w-full bg-[#0d1114] border ${errors.lastName ? 'border-red-500/50' : 'border-white/10'} rounded-[10px] px-4 py-3 text-[14px] text-white placeholder-gray-600 focus:outline-none focus:border-[#4ade80] transition-colors`}
                   />
                   {errors.lastName && <p className="text-red-400 text-[11px] mt-1.5 font-medium">{errors.lastName.message}</p>}
@@ -99,7 +107,7 @@ export default function AdminRegister() {
                   placeholder="ejemplo@pronatural.com"
                   {...register("email", { 
                     required: "El correo es obligatorio",
-                    pattern: { value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i, message: "Correo inválido" }
+                    pattern: { value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i, message: "El formato de correo electrónico no es válido" }
                   })}
                   className={`w-full bg-[#0d1114] border ${errors.email ? 'border-red-500/50' : 'border-white/10'} rounded-[10px] px-4 py-3 text-[14px] text-white placeholder-gray-600 focus:outline-none focus:border-[#4ade80] transition-colors`}
                 />
@@ -131,8 +139,8 @@ export default function AdminRegister() {
                     type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
                     {...register("password", { 
-                      required: "Requerido",
-                      minLength: { value: 8, message: "Mínimo 8 caracteres" },
+                      required: "La contraseña es obligatoria",
+                      minLength: { value: 8, message: "La contraseña debe tener al menos 8 caracteres" },
                       pattern: {
                         value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
                         message: "Debe incluir mayúscula, minúscula, número y símbolo especial"
@@ -156,7 +164,7 @@ export default function AdminRegister() {
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   {...register("confirmPassword", { 
-                    required: "Requerido",
+                    required: "Debes confirmar la contraseña",
                     validate: value => value === passwordValue || "Las contraseñas no coinciden"
                   })}
                   className={`w-full bg-[#0d1114] border ${errors.confirmPassword ? 'border-red-500/50' : 'border-white/10'} rounded-[10px] px-4 py-3 text-[14px] text-white placeholder-gray-600 focus:outline-none focus:border-[#4ade80] transition-colors`}

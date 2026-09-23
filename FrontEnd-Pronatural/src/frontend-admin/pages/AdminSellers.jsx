@@ -82,19 +82,29 @@ export default function AdminSellers() {
                 <label className="text-gray-400 text-xs uppercase tracking-wider mb-1.5 block">Nombre *</label>
                 <input
                   type="text"
-                  {...register("name", { required: "Requerido" })}
+                  {...register("name", { 
+                    required: "El nombre del empleado es obligatorio",
+                    minLength: { value: 2, message: "El nombre debe tener al menos 2 caracteres" },
+                    pattern: { value: /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/, message: "El nombre solo debe contener letras y espacios" }
+                  })}
                   placeholder="Ej. Ana"
                   className={`w-full bg-[#0d1114] border ${errors.name ? 'border-red-500/50' : 'border-white/10'} rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#4ade80] transition-colors`}
                 />
+                {errors.name && <p className="text-red-400 text-[11px] mt-1">{errors.name.message}</p>}
               </div>
               <div>
                 <label className="text-gray-400 text-xs uppercase tracking-wider mb-1.5 block">Apellido *</label>
                 <input
                   type="text"
-                  {...register("lastName", { required: "Requerido" })}
+                  {...register("lastName", { 
+                    required: "El apellido del empleado es obligatorio",
+                    minLength: { value: 2, message: "El apellido debe tener al menos 2 caracteres" },
+                    pattern: { value: /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/, message: "El apellido solo debe contener letras y espacios" }
+                  })}
                   placeholder="Ej. García"
                   className={`w-full bg-[#0d1114] border ${errors.lastName ? 'border-red-500/50' : 'border-white/10'} rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#4ade80] transition-colors`}
                 />
+                {errors.lastName && <p className="text-red-400 text-[11px] mt-1">{errors.lastName.message}</p>}
               </div>
             </div>
             
@@ -104,7 +114,7 @@ export default function AdminSellers() {
                 type="email"
                 {...register("email", { 
                   required: "El correo es requerido",
-                  pattern: { value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i, message: "Correo inválido" }
+                  pattern: { value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i, message: "El formato de correo electrónico no es válido" }
                 })}
                 placeholder="ana@pronatural.com"
                 className={`w-full bg-[#0d1114] border ${errors.email ? 'border-red-500/50' : 'border-white/10'} rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#4ade80] transition-colors`}
@@ -116,10 +126,14 @@ export default function AdminSellers() {
               <label className="text-gray-400 text-xs uppercase tracking-wider mb-1.5 block">Contraseña *</label>
               <input
                 type="text"
-                {...register("password", { required: "Contraseña requerida" })}
+                {...register("password", { 
+                  required: "La contraseña es obligatoria",
+                  minLength: { value: 6, message: "La contraseña debe tener al menos 6 caracteres" }
+                })}
                 placeholder="********"
                 className={`w-full bg-[#0d1114] border ${errors.password ? 'border-red-500/50' : 'border-white/10'} rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#4ade80] transition-colors`}
               />
+              {errors.password && <p className="text-red-400 text-[11px] mt-1">{errors.password.message}</p>}
             </div>
 
             <div>
@@ -155,7 +169,7 @@ export default function AdminSellers() {
                 <label className="text-gray-400 text-xs uppercase tracking-wider mb-1.5 block">Salario ($) *</label>
                 <input
                   type="number"
-                  {...register("salary", { required: "Requerido", min: 0 })}
+                  {...register("salary", { required: "El salario es obligatorio", min: { value: 0, message: "El salario debe ser mayor o igual a 0" } })}
                   placeholder="400"
                   className="w-full bg-[#0d1114] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#4ade80] transition-colors"
                 />

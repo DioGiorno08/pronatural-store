@@ -86,6 +86,7 @@ app.use(express.urlencoded({ limit: "50mb", extended: true }));
 // Definición y montaje de las rutas de la API en sus respectivos endpoints
 app.use("/api/auth", authRoutes);
 app.use("/api/categories", categoriasRoutes);
+app.use("/api/categorias", categoriasRoutes); // Alias en español para retrocompatibilidad
 app.use("/api/products", productosRoutes);
 app.use("/api/sales", ventasRoutes);
 app.use("/api/inventory", inventarioRoutes);
