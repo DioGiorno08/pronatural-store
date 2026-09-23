@@ -1,8 +1,7 @@
 import React, { createContext, useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// creamos el contexto de autenticación para compartir la sesión en la app
-import { getApiBaseUrl, setApiBaseUrl, resetApiBaseUrl } from "../config/apiConfig";
+import { getApiBaseUrl, setApiBaseUrl, resetApiBaseUrl, DEFAULT_CLOUD_URL } from "../config/apiConfig";
 
 // creamos el contexto de autenticación para compartir la sesión en la app
 export const AuthContext = createContext();
@@ -15,8 +14,8 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   // estado para controlar si la app está verificando la sesión inicial
   const [loading, setLoading] = useState(true);
-  // estado para la URL activa del servidor
-  const [apiUrl, setApiUrl] = useState("http://172.20.10.3:4000/api");
+  // estado para la URL activa del servidor (por defecto en la nube HTTPS de Render)
+  const [apiUrl, setApiUrl] = useState(DEFAULT_CLOUD_URL);
 
   // al montar el componente, verificamos si existe una sesión previa guardada y la URL de API
   useEffect(() => {

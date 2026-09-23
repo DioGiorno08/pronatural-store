@@ -18,7 +18,7 @@ import useAuth from "../hooks/useAuth";
 
 const CategoryModal = ({ visible, category, onClose, onSaved }) => {
   const { authFetch } = useAuth();
-  const isEdit = !!(category && (category._id || category.id));
+  const isEdit = !!(category && (category.id || category._id));
 
   const [nombre, setNombre]           = useState("");
   const [descripcion, setDescripcion] = useState("");
@@ -27,7 +27,7 @@ const CategoryModal = ({ visible, category, onClose, onSaved }) => {
 
   React.useEffect(() => {
     if (visible && category) {
-      setNombre(category.nombreCategoria || category.name || "");
+      setNombre(category.nombre || category.name || "");
       setDescripcion(category.descripcion || category.description || "");
       setEstado(category.estado || "Activo");
     } else if (visible) {
@@ -46,31 +46,33 @@ const CategoryModal = ({ visible, category, onClose, onSaved }) => {
     setSaving(true);
     try {
       const body = {
-        nombreCategoria: nombre.trim(),
+        nombre: nombre.trim(),
+        name: nombre.trim(),
         descripcion: descripcion.trim(),
+        description: descripcion.trim(),
         estado: estado,
       };
 
-      const targetId = category ? (category._id || category.id) : null;
+      const targetId = category ? (category.id || category._id) : null;
 
       if (isEdit && targetId) {
-        await authFetch(`/categorias/${targetId}`, {
+        await authFetch(`/categories/${targetId}`, {
           method: "PUT",
           body: JSON.stringify(body),
         });
         Alert.alert("✅ Éxito", "Categoría actualizada correctamente.");
       } else {
-        await authFetch("/categorias", {
+        await authFetch("/categories", {
           method: "POST",
           body: JSON.stringify(body),
         });
-        Alert.alert("✅ Éxito", "Categoría registrada correctamente.");
+        Alert.alert("✅ Éxito", "Categoría creada correctamente.");
       }
 
       onSaved();
       onClose();
     } catch (err) {
-      Alert.alert("Error", err.message || "No se pudo guardar la categoría.");
+      Alert.alert("Error al guardar", err.message || "No se pudo guardar la categoría.");
     } finally {
       setSaving(false);
     }
@@ -84,18 +86,18 @@ const CategoryModal = ({ visible, category, onClose, onSaved }) => {
             <Text style={modalStyles.title}>
               {isEdit ? "Editar Categoría" : "Nueva Categoría"}
             </Text>
-            <TouchableOpacity onPress={onClose}>
+            <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
               <Ionicons name="close" size={24} color="#888" />
             </TouchableOpacity>
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false}>
             <View style={modalStyles.field}>
-              <Text style={modalStyles.lbl}>Nombre de la Categoría *</Text>
+              <Text style={modalStyles.lbl}>Nombre de Categoría *</Text>
               <TextInput
                 style={modalStyles.inp}
-                placeholder="Ej: Aceites y Bálsamos"
-                placeholderTextColor="#444"
+                placeholder="Ej. Aceites y Bálsamos, Infusiones..."
+                placeholderTextColor="#555"
                 value={nombre}
                 onChangeText={setNombre}
               />
@@ -104,9 +106,9 @@ const CategoryModal = ({ visible, category, onClose, onSaved }) => {
             <View style={modalStyles.field}>
               <Text style={modalStyles.lbl}>Descripción</Text>
               <TextInput
-                style={[modalStyles.inp, { height: 80, textAlignVertical: "top" }]}
-                placeholder="Breve descripción del tipo de productos..."
-                placeholderTextColor="#444"
+                style={[modalStyles.inp, { height: 75, textAlignVertical: "top" }]}
+                placeholder="Breve descripción del catálogo o usos..."
+                placeholderTextColor="#555"
                 multiline
                 value={descripcion}
                 onChangeText={setDescripcion}
@@ -115,25 +117,20 @@ const CategoryModal = ({ visible, category, onClose, onSaved }) => {
 
             <View style={modalStyles.field}>
               <Text style={modalStyles.lbl}>Estado</Text>
-              <View style={modalStyles.statusRow}>
+              <View style={modalStyles.stateRow}>
                 {["Activo", "Inactivo"].map((st) => (
                   <TouchableOpacity
                     key={st}
                     style={[
-                      modalStyles.statusBtn,
-                      estado === st && modalStyles.statusBtnActive,
+                      modalStyles.stateOpt,
+                      estado === st && modalStyles.stateOptActive,
                     ]}
                     onPress={() => setEstado(st)}
                   >
-                    <Ionicons
-                      name={st === "Activo" ? "checkmark-circle" : "close-circle"}
-                      size={16}
-                      color={estado === st ? "#30b466" : "#666"}
-                    />
                     <Text
                       style={[
-                        modalStyles.statusTxt,
-                        estado === st && modalStyles.statusTxtActive,
+                        modalStyles.stateOptTxt,
+                        estado === st && modalStyles.stateOptTxtActive,
                       ]}
                     >
                       {st}
@@ -143,24 +140,20 @@ const CategoryModal = ({ visible, category, onClose, onSaved }) => {
               </View>
             </View>
 
-            <View style={modalStyles.btns}>
-              <TouchableOpacity style={modalStyles.cancelBtn} onPress={onClose}>
-                <Text style={modalStyles.cancelTxt}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[modalStyles.saveBtn, saving && { opacity: 0.6 }]}
-                onPress={handleSave}
-                disabled={saving}
-              >
-                {saving ? (
-                  <ActivityIndicator color="#0a110d" />
-                ) : (
-                  <Text style={modalStyles.saveTxt}>
-                    {isEdit ? "Guardar Cambios" : "Crear Categoría"}
-                  </Text>
-                )}
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity
+              style={modalStyles.saveBtn}
+              onPress={handleSave}
+              disabled={saving}
+              activeOpacity={0.8}
+            >
+              {saving ? (
+                <ActivityIndicator color="#0a110d" size="small" />
+              ) : (
+                <Text style={modalStyles.saveBtnTxt}>
+                  {isEdit ? "Guardar Cambios" : "Crear Categoría"}
+                </Text>
+              )}
+            </TouchableOpacity>
           </ScrollView>
         </View>
       </View>
@@ -174,18 +167,23 @@ const AdminCategoriesScreen = () => {
   const [loading, setLoading]       = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch]         = useState("");
-  const [modalVisible, setModalVisible] = useState(false);
-  const [selectedCat, setSelectedCat]   = useState(null);
 
-  const loadCategories = async () => {
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editingCat, setEditingCat]     = useState(null);
+
+  const fetchCategories = async () => {
     try {
-      const data = await authFetch("/categorias");
-      const list = Array.isArray(data)
-        ? data
-        : data.categories || data.data || [];
-      setCategories(list);
+      const res = await authFetch("/categories");
+      const list = Array.isArray(res) ? res : res.categorias || res.categories || [];
+      const normalized = list.map((c) => ({
+        id: c.id || c._id,
+        nombre: c.nombre || c.name || "Sin nombre",
+        descripcion: c.descripcion || c.description || "",
+        estado: c.estado || "Activo",
+      }));
+      setCategories(normalized);
     } catch (err) {
-      Alert.alert("Error al cargar categorías", err.message);
+      console.warn("Error al cargar categorías:", err.message);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -194,27 +192,14 @@ const AdminCategoriesScreen = () => {
 
   useFocusEffect(
     React.useCallback(() => {
-      loadCategories();
+      fetchCategories();
     }, [])
   );
 
-  const handleToggleStatus = async (item) => {
-    const id = item._id || item.id;
-    try {
-      await authFetch(`/categorias/${id}/toggle`, { method: "PATCH" });
-      loadCategories();
-    } catch (err) {
-      Alert.alert("Error", err.message);
-    }
-  };
-
-  const handleDelete = (item) => {
-    const id = item._id || item.id;
-    const name = item.nombreCategoria || item.name || "Categoría";
-
+  const handleDelete = (cat) => {
     Alert.alert(
-      "¿Eliminar categoría?",
-      `Se eliminará la categoría "${name}". Esta acción no se puede deshacer.`,
+      "Eliminar Categoría",
+      `¿Estás seguro de eliminar la categoría "${cat.nombre}"?`,
       [
         { text: "Cancelar", style: "cancel" },
         {
@@ -222,11 +207,11 @@ const AdminCategoriesScreen = () => {
           style: "destructive",
           onPress: async () => {
             try {
-              await authFetch(`/categorias/${id}`, { method: "DELETE" });
-              Alert.alert("✅ Eliminada", "La categoría ha sido eliminada.");
-              loadCategories();
+              await authFetch(`/categories/${cat.id}`, { method: "DELETE" });
+              Alert.alert("✅ Eliminada", "Categoría eliminada con éxito.");
+              fetchCategories();
             } catch (err) {
-              Alert.alert("Error al eliminar", err.message);
+              Alert.alert("Error", err.message || "No se pudo eliminar.");
             }
           },
         },
@@ -234,127 +219,137 @@ const AdminCategoriesScreen = () => {
     );
   };
 
-  const filtered = categories.filter((c) => {
-    const q = search.toLowerCase();
-    const name = (c.nombreCategoria || c.name || "").toLowerCase();
-    const desc = (c.descripcion || c.description || "").toLowerCase();
-    return name.includes(q) || desc.includes(q);
-  });
+  const filtered = categories.filter((c) =>
+    c.nombre.toLowerCase().includes(search.toLowerCase())
+  );
 
-  const renderItem = ({ item }) => {
-    const isActive = (item.estado || "Activo") === "Activo";
-    return (
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <View style={styles.iconCircle}>
-            <Ionicons name="pricetag" size={18} color="#30b466" />
-          </View>
-          <View style={{ flex: 1, marginLeft: 12 }}>
-            <Text style={styles.catName}>{item.nombreCategoria || item.name}</Text>
-            {item.descripcion ? (
-              <Text style={styles.catDesc} numberOfLines={2}>
-                {item.descripcion}
-              </Text>
-            ) : null}
-          </View>
-          <TouchableOpacity
+  const renderCategory = ({ item }) => (
+    <View style={styles.card}>
+      <View style={styles.cardHeader}>
+        <View style={styles.catIdPill}>
+          <Text style={styles.catIdTxt}>#{String(item.id).substring(0, 6)}</Text>
+        </View>
+        <View
+          style={[
+            styles.badge,
+            item.estado === "Inactivo" ? styles.badgeInactive : styles.badgeActive,
+          ]}
+        >
+          <Text
             style={[
-              styles.badgeStatus,
-              { backgroundColor: isActive ? "rgba(48, 180, 102, 0.15)" : "rgba(239, 68, 68, 0.15)" },
+              styles.badgeTxt,
+              item.estado === "Inactivo" ? styles.badgeTxtInactive : styles.badgeTxtActive,
             ]}
-            onPress={() => handleToggleStatus(item)}
           >
-            <Text style={[styles.badgeText, { color: isActive ? "#30b466" : "#ef4444" }]}>
-              {isActive ? "Activa" : "Inactiva"}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.cardActions}>
-          <TouchableOpacity
-            style={styles.actionBtn}
-            onPress={() => {
-              setSelectedCat(item);
-              setModalVisible(true);
-            }}
-          >
-            <Ionicons name="create-outline" size={16} color="#3b82f6" />
-            <Text style={[styles.actionTxt, { color: "#3b82f6" }]}>Editar</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.actionBtn}
-            onPress={() => handleDelete(item)}
-          >
-            <Ionicons name="trash-outline" size={16} color="#ef4444" />
-            <Text style={[styles.actionTxt, { color: "#ef4444" }]}>Eliminar</Text>
-          </TouchableOpacity>
+            {item.estado}
+          </Text>
         </View>
       </View>
-    );
-  };
 
-  if (loading) {
-    return (
-      <View style={[styles.screen, { justifyContent: "center", alignItems: "center" }]}>
-        <ActivityIndicator size="large" color="#30b466" />
+      <Text style={styles.catName}>{item.nombre}</Text>
+      {!!item.descripcion && (
+        <Text style={styles.catDesc} numberOfLines={2}>
+          {item.descripcion}
+        </Text>
+      )}
+
+      <View style={styles.actionsRow}>
+        <TouchableOpacity
+          style={styles.editBtn}
+          onPress={() => {
+            setEditingCat(item);
+            setModalVisible(true);
+          }}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="create-outline" size={14} color="#30b466" />
+          <Text style={styles.editBtnTxt}>Editar</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.deleteBtn}
+          onPress={() => handleDelete(item)}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="trash-outline" size={14} color="#ef4444" />
+          <Text style={styles.deleteBtnTxt}>Eliminar</Text>
+        </TouchableOpacity>
       </View>
-    );
-  }
+    </View>
+  );
 
   return (
-    <View style={styles.screen}>
-      <View style={styles.topBar}>
-        <View style={styles.searchWrap}>
-          <Ionicons name="search" size={16} color="#555" />
-          <TextInput
-            style={styles.searchInput}
-            placeholder={`Buscar entre ${categories.length} categorías...`}
-            placeholderTextColor="#444"
-            value={search}
-            onChangeText={setSearch}
-          />
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.title}>Gestión de Categorías</Text>
+          <Text style={styles.subtitle}>
+            {categories.length} categorías registradas
+          </Text>
         </View>
         <TouchableOpacity
           style={styles.addBtn}
           onPress={() => {
-            setSelectedCat(null);
+            setEditingCat(null);
             setModalVisible(true);
           }}
-          activeOpacity={0.85}
+          activeOpacity={0.8}
         >
-          <Ionicons name="add" size={20} color="#0a110d" />
+          <Ionicons name="add" size={18} color="#0a110d" />
           <Text style={styles.addBtnTxt}>Nueva</Text>
         </TouchableOpacity>
       </View>
 
-      <FlatList
-        data={filtered}
-        keyExtractor={(item) => (item._id || item.id || Math.random()).toString()}
-        renderItem={renderItem}
-        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={() => {
-              setRefreshing(true);
-              loadCategories();
-            }}
-            tintColor="#30b466"
-          />
-        }
-        ListEmptyComponent={
-          <Text style={styles.emptyTxt}>
-            {search ? "No se encontraron categorías coincidentes." : "No hay categorías registradas en la base de datos."}
-          </Text>
-        }
-      />
+      <View style={styles.searchBar}>
+        <Ionicons name="search-outline" size={16} color="#666" />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Buscar categorías..."
+          placeholderTextColor="#555"
+          value={search}
+          onChangeText={setSearch}
+        />
+        {search.length > 0 && (
+          <TouchableOpacity onPress={() => setSearch("")}>
+            <Ionicons name="close-circle" size={16} color="#666" />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {loading ? (
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color="#30b466" />
+        </View>
+      ) : (
+        <FlatList
+          data={filtered}
+          keyExtractor={(item) => String(item.id)}
+          renderItem={renderCategory}
+          contentContainerStyle={styles.list}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => {
+                setRefreshing(true);
+                fetchCategories();
+              }}
+              tintColor="#30b466"
+            />
+          }
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <Ionicons name="pricetags-outline" size={44} color="#333" />
+              <Text style={styles.emptyTxt}>No hay categorías registradas</Text>
+            </View>
+          }
+        />
+      )}
 
       <CategoryModal
         visible={modalVisible}
-        category={selectedCat}
+        category={editingCat}
         onClose={() => setModalVisible(false)}
-        onSaved={loadCategories}
+        onSaved={fetchCategories}
       />
     </View>
   );
@@ -363,154 +358,160 @@ const AdminCategoriesScreen = () => {
 export default AdminCategoriesScreen;
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#0a0d0f" },
-  topBar: {
+  container: { flex: 1, backgroundColor: "#0a0d0f" },
+  header: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 16,
-    gap: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.05)",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 10,
   },
-  searchWrap: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#121619",
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
-  },
-  searchInput: {
-    flex: 1,
-    color: "#fff",
-    paddingVertical: 10,
-    paddingLeft: 8,
-    fontSize: 14,
-  },
+  title: { fontSize: 18, fontWeight: "bold", color: "#fff" },
+  subtitle: { fontSize: 11, color: "#666", marginTop: 1 },
   addBtn: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#30b466",
     paddingHorizontal: 14,
-    paddingVertical: 11,
-    borderRadius: 10,
+    paddingVertical: 8,
+    borderRadius: 8,
     gap: 4,
   },
-  addBtnTxt: { color: "#0a110d", fontWeight: "bold", fontSize: 14 },
-  card: {
-    backgroundColor: "#121619",
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
-  },
-  cardHeader: { flexDirection: "row", alignItems: "center" },
-  iconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(48, 180, 102, 0.12)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  catName: { color: "#fff", fontSize: 16, fontWeight: "bold" },
-  catDesc: { color: "#888", fontSize: 12, marginTop: 3 },
-  badgeStatus: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  badgeText: { fontSize: 11, fontWeight: "bold" },
-  cardActions: {
+  addBtnTxt: { color: "#0a110d", fontWeight: "bold", fontSize: 13 },
+  searchBar: {
     flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 16,
-    marginTop: 12,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(255, 255, 255, 0.05)",
+    alignItems: "center",
+    backgroundColor: "#121619",
+    marginHorizontal: 16,
+    marginVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+    gap: 8,
   },
-  actionBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
-  actionTxt: { fontSize: 13, fontWeight: "600" },
-  emptyTxt: { color: "#666", textAlign: "center", marginTop: 40, fontSize: 14 },
+  searchInput: { flex: 1, color: "#fff", height: 40, fontSize: 13 },
+  center: { flex: 1, justifyContent: "center", alignItems: "center" },
+  list: { paddingHorizontal: 16, paddingBottom: 24 },
+  card: {
+    backgroundColor: "#161b1e",
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.06)",
+  },
+  cardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  catIdPill: {
+    backgroundColor: "rgba(255,255,255,0.04)",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  catIdTxt: { color: "#4ade80", fontSize: 11, fontFamily: "monospace", fontWeight: "bold" },
+  badge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
+  badgeActive: { backgroundColor: "rgba(48, 180, 102, 0.12)" },
+  badgeInactive: { backgroundColor: "rgba(239, 68, 68, 0.12)" },
+  badgeTxt: { fontSize: 10, fontWeight: "bold" },
+  badgeTxtActive: { color: "#4ade80" },
+  badgeTxtInactive: { color: "#ef4444" },
+  catName: { color: "#fff", fontSize: 15, fontWeight: "bold", marginBottom: 4 },
+  catDesc: { color: "#888", fontSize: 12, lineHeight: 16, marginBottom: 12 },
+  actionsRow: { flexDirection: "row", gap: 8, justifyContent: "flex-end" },
+  editBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "rgba(48, 180, 102, 0.12)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "rgba(48, 180, 102, 0.25)",
+  },
+  editBtnTxt: { color: "#4ade80", fontSize: 12, fontWeight: "bold" },
+  deleteBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "rgba(239, 68, 68, 0.1)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "rgba(239, 68, 68, 0.25)",
+  },
+  deleteBtnTxt: { color: "#ef4444", fontSize: 12, fontWeight: "bold" },
+  empty: { alignItems: "center", justifyContent: "center", paddingVertical: 60 },
+  emptyTxt: { color: "#555", marginTop: 10, fontSize: 13 },
 });
 
 const modalStyles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.8)",
+    backgroundColor: "rgba(0,0,0,0.75)",
     justifyContent: "flex-end",
   },
   sheet: {
-    backgroundColor: "#121619",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 24,
-    maxHeight: "85%",
+    backgroundColor: "#161b1e",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    maxHeight: "80%",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
   },
   hdr: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255,255,255,0.06)",
   },
-  title: { color: "#fff", fontSize: 18, fontWeight: "bold" },
-  field: { marginBottom: 16 },
-  lbl: {
-    color: "#666",
-    fontSize: 12,
-    fontWeight: "600",
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    marginBottom: 6,
-  },
+  title: { color: "#fff", fontSize: 17, fontWeight: "bold" },
+  field: { marginBottom: 14 },
+  lbl: { color: "#888", fontSize: 11, fontWeight: "bold", textTransform: "uppercase", marginBottom: 6 },
   inp: {
     backgroundColor: "#0d1114",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.15)",
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 11,
+    borderColor: "rgba(255,255,255,0.1)",
+    borderRadius: 8,
     color: "#fff",
-    fontSize: 14,
+    paddingHorizontal: 12,
+    height: 42,
+    fontSize: 13,
   },
-  statusRow: { flexDirection: "row", gap: 12 },
-  statusBtn: {
+  stateRow: { flexDirection: "row", gap: 10 },
+  stateOpt: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    backgroundColor: "#0d1114",
+    paddingVertical: 10,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.1)",
-    paddingVertical: 10,
-    borderRadius: 10,
+    backgroundColor: "#0d1114",
+    alignItems: "center",
   },
-  statusBtnActive: {
+  stateOptActive: {
+    backgroundColor: "rgba(48, 180, 102, 0.15)",
     borderColor: "#30b466",
-    backgroundColor: "rgba(48, 180, 102, 0.1)",
   },
-  statusTxt: { color: "#888", fontSize: 13, fontWeight: "600" },
-  statusTxtActive: { color: "#30b466" },
-  btns: { flexDirection: "row", gap: 12, marginTop: 10 },
-  cancelBtn: {
-    flex: 1,
-    backgroundColor: "#1c2227",
-    paddingVertical: 13,
-    borderRadius: 10,
-    alignItems: "center",
-  },
-  cancelTxt: { color: "#aaa", fontSize: 14, fontWeight: "600" },
+  stateOptTxt: { color: "#777", fontSize: 13, fontWeight: "600" },
+  stateOptTxtActive: { color: "#4ade80", fontWeight: "bold" },
   saveBtn: {
-    flex: 2,
     backgroundColor: "#30b466",
-    paddingVertical: 13,
-    borderRadius: 10,
+    paddingVertical: 12,
+    borderRadius: 8,
     alignItems: "center",
+    marginTop: 8,
+    marginBottom: 16,
   },
-  saveTxt: { color: "#0a110d", fontSize: 14, fontWeight: "bold" },
+  saveBtnTxt: { color: "#0a110d", fontSize: 14, fontWeight: "bold" },
 });

@@ -5,12 +5,12 @@ import {
   FlatList,
   TouchableOpacity,
   TextInput,
+  Image,
   StyleSheet,
   ActivityIndicator,
   Alert,
   Modal,
   ScrollView,
-  Image,
   RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -44,30 +44,38 @@ const uploadToCloudinary = async (uri) => {
 // estado inicial del formulario
 const EMPTY_FORM = { name: "", price: "", stock: "", category: "", desc: "" };
 
-// componente Modal para crear o actualizar un producto
-const ProductModal = ({ visible, product, onClose, onSaved }) => {
+// componente Modal para crear o actualizar un producto con selector dinámico de categorías
+const ProductModal = ({ visible, product, onClose, onSaved, categories = [] }) => {
   const { authFetch } = useAuth();
   const isEdit = !!(product && (product.id || product._id));
 
-  const [form, setForm]     = useState(EMPTY_FORM);
-  const [imgUri, setImgUri] = useState(null);
-  const [saving, setSaving] = useState(false);
+  const [form, setForm]         = useState(EMPTY_FORM);
+  const [imgUri, setImgUri]     = useState(null);
+  const [saving, setSaving]     = useState(false);
+  const [customCat, setCustomCat] = useState("");
+  const [isManualCat, setIsManualCat] = useState(false);
 
   useEffect(() => {
     if (visible && product) {
+      const existingCat = product.category || product.idCategoria || product.categoria || "";
       setForm({
         name:     product.name || product.nombreProducto || product.nombre || "",
         price:    String(product.price !== undefined ? product.price : (product.precio || "")),
         stock:    String(product.stock !== undefined ? product.stock : ""),
-        category: product.category || product.idCategoria || product.categoria || "",
+        category: existingCat,
         desc:     product.desc || product.descripcion || "",
       });
       setImgUri(product.img || product.imagenProducto || product.imagen || null);
+      setIsManualCat(existingCat ? !categories.includes(existingCat) : false);
+      setCustomCat(existingCat);
     } else if (visible) {
-      setForm(EMPTY_FORM);
+      const defaultCat = categories.length > 0 ? categories[0] : "";
+      setForm({ ...EMPTY_FORM, category: defaultCat });
       setImgUri(null);
+      setIsManualCat(false);
+      setCustomCat("");
     }
-  }, [product, visible]);
+  }, [product, visible, categories]);
 
   const pickImage = async () => {
     const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -84,9 +92,21 @@ const ProductModal = ({ visible, product, onClose, onSaved }) => {
     if (!result.canceled) setImgUri(result.assets[0].uri);
   };
 
+  const handleSelectCategory = (cat) => {
+    setIsManualCat(false);
+    setForm((prev) => ({ ...prev, category: cat }));
+  };
+
   const handleSave = async () => {
+    const finalCategory = isManualCat ? customCat.trim() : form.category.trim();
+
     if (!form.name.trim() || !form.price) {
       Alert.alert("Campos requeridos", "El nombre y el precio son obligatorios.");
+      return;
+    }
+
+    if (!finalCategory) {
+      Alert.alert("Categoría requerida", "Selecciona una categoría de la lista para el producto.");
       return;
     }
 
@@ -104,7 +124,7 @@ const ProductModal = ({ visible, product, onClose, onSaved }) => {
         name: form.name.trim(),
         price: parseFloat(form.price),
         stock: parseInt(form.stock) || 0,
-        category: form.category.trim(),
+        category: finalCategory,
         desc: form.desc.trim(),
         ...(finalImg ? { img: finalImg } : {}),
       };
@@ -128,18 +148,11 @@ const ProductModal = ({ visible, product, onClose, onSaved }) => {
       onSaved();
       onClose();
     } catch (e) {
-      Alert.alert("Error", e.message);
+      Alert.alert("Error", e.message || "No se pudo guardar el producto.");
     } finally {
       setSaving(false);
     }
   };
-
-  const fields = [
-    { label: "Nombre del Producto *", key: "name", placeholder: "Miel de Abeja 500g" },
-    { label: "Precio ($) *",          key: "price", placeholder: "18.50", kb: "numeric" },
-    { label: "Stock Inicial",        key: "stock", placeholder: "50", kb: "numeric" },
-    { label: "Categoría",            key: "category", placeholder: "Mieles y Suplementos" },
-  ];
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
@@ -147,60 +160,175 @@ const ProductModal = ({ visible, product, onClose, onSaved }) => {
         <View style={modalStyles.sheet}>
           <View style={modalStyles.hdr}>
             <Text style={modalStyles.title}>{isEdit ? "Editar Producto" : "Nuevo Producto"}</Text>
-            <TouchableOpacity onPress={onClose}>
+            <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
               <Ionicons name="close" size={24} color="#888" />
             </TouchableOpacity>
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false}>
-            <TouchableOpacity style={modalStyles.imgBox} onPress={pickImage}>
+            {/* FOTO DEL PRODUCTO */}
+            <TouchableOpacity style={modalStyles.imgBox} onPress={pickImage} activeOpacity={0.8}>
               {imgUri ? (
                 <Image source={{ uri: imgUri }} style={modalStyles.imgPreview} />
               ) : (
                 <View style={modalStyles.imgPlaceholder}>
-                  <Ionicons name="camera" size={32} color="#30b466" />
-                  <Text style={modalStyles.imgText}>Subir Imagen</Text>
+                  <Ionicons name="camera" size={30} color="#30b466" />
+                  <Text style={modalStyles.imgText}>Seleccionar Foto</Text>
                 </View>
               )}
             </TouchableOpacity>
 
-            {fields.map(({ label, key, placeholder, kb }) => (
-              <View key={key} style={modalStyles.field}>
-                <Text style={modalStyles.lbl}>{label}</Text>
-                <TextInput
-                  style={modalStyles.inp}
-                  placeholder={placeholder}
-                  placeholderTextColor="#444"
-                  keyboardType={kb || "default"}
-                  value={form[key]}
-                  onChangeText={v => setForm(f => ({ ...f, [key]: v }))}
-                />
-              </View>
-            ))}
-
+            {/* NOMBRE */}
             <View style={modalStyles.field}>
-              <Text style={modalStyles.lbl}>Descripción</Text>
+              <Text style={modalStyles.lbl}>Nombre del Producto *</Text>
               <TextInput
-                style={[modalStyles.inp, { height: 80, textAlignVertical: "top" }]}
-                placeholder="Descripción detallada del producto..."
-                placeholderTextColor="#444"
-                multiline
-                value={form.desc}
-                onChangeText={v => setForm(f => ({ ...f, desc: v }))}
+                style={modalStyles.inp}
+                placeholder="Ej. Miel de Abeja 500g, Aceite de Romero..."
+                placeholderTextColor="#555"
+                value={form.name}
+                onChangeText={(v) => setForm((f) => ({ ...f, name: v }))}
               />
             </View>
 
+            {/* PRECIO Y STOCK EN 2 COLUMNAS */}
+            <View style={{ flexDirection: "row", gap: 10 }}>
+              <View style={[modalStyles.field, { flex: 1 }]}>
+                <Text style={modalStyles.lbl}>Precio ($ USD) *</Text>
+                <TextInput
+                  style={modalStyles.inp}
+                  placeholder="18.50"
+                  placeholderTextColor="#555"
+                  keyboardType="numeric"
+                  value={form.price}
+                  onChangeText={(v) => setForm((f) => ({ ...f, price: v }))}
+                />
+              </View>
+
+              <View style={[modalStyles.field, { flex: 1 }]}>
+                <Text style={modalStyles.lbl}>Stock en Inventario</Text>
+                <TextInput
+                  style={modalStyles.inp}
+                  placeholder="50"
+                  placeholderTextColor="#555"
+                  keyboardType="numeric"
+                  value={form.stock}
+                  onChangeText={(v) => setForm((f) => ({ ...f, stock: v }))}
+                />
+              </View>
+            </View>
+
+            {/* SELECTOR DESPLEGABLE / CHIPS DE CATEGORÍAS REGISTRADAS */}
+            <View style={modalStyles.field}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                <Text style={modalStyles.lbl}>Categoría del Producto *</Text>
+                {categories.length > 0 && (
+                  <Text style={{ fontSize: 10.5, color: "#30b466", fontWeight: "600" }}>
+                    {categories.length} disponibles
+                  </Text>
+                )}
+              </View>
+
+              {/* Lista horizontal/malla de categorías disponibles en la base de datos */}
+              <View style={modalStyles.catChipsWrap}>
+                {categories.map((cat, idx) => {
+                  const isSelected = !isManualCat && form.category === cat;
+                  return (
+                    <TouchableOpacity
+                      key={idx}
+                      style={[
+                        modalStyles.catChip,
+                        isSelected && modalStyles.catChipActive,
+                      ]}
+                      onPress={() => handleSelectCategory(cat)}
+                      activeOpacity={0.75}
+                    >
+                      <Ionicons
+                        name={isSelected ? "checkmark-circle" : "pricetag-outline"}
+                        size={13}
+                        color={isSelected ? "#0a110d" : "#4ade80"}
+                      />
+                      <Text
+                        style={[
+                          modalStyles.catChipTxt,
+                          isSelected && modalStyles.catChipTxtActive,
+                        ]}
+                      >
+                        {cat}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+
+                {/* Opción para escribir categoría personalizada */}
+                <TouchableOpacity
+                  style={[
+                    modalStyles.catChip,
+                    isManualCat && modalStyles.catChipActive,
+                    { borderColor: "rgba(255,255,255,0.15)" },
+                  ]}
+                  onPress={() => {
+                    setIsManualCat(true);
+                    setForm((f) => ({ ...f, category: customCat }));
+                  }}
+                  activeOpacity={0.75}
+                >
+                  <Ionicons
+                    name={isManualCat ? "checkmark-circle" : "create-outline"}
+                    size={13}
+                    color={isManualCat ? "#0a110d" : "#aaa"}
+                  />
+                  <Text
+                    style={[
+                      modalStyles.catChipTxt,
+                      isManualCat && modalStyles.catChipTxtActive,
+                    ]}
+                  >
+                    + Otra categoría
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Input en caso de que elija otra categoría */}
+              {isManualCat && (
+                <TextInput
+                  style={[modalStyles.inp, { marginTop: 8 }]}
+                  placeholder="Escribe el nombre de la categoría..."
+                  placeholderTextColor="#555"
+                  value={customCat}
+                  onChangeText={(v) => {
+                    setCustomCat(v);
+                    setForm((f) => ({ ...f, category: v }));
+                  }}
+                />
+              )}
+            </View>
+
+            {/* DESCRIPCIÓN */}
+            <View style={modalStyles.field}>
+              <Text style={modalStyles.lbl}>Descripción del Producto</Text>
+              <TextInput
+                style={[modalStyles.inp, { height: 75, textAlignVertical: "top" }]}
+                placeholder="Descripción detallada, ingredientes, beneficios..."
+                placeholderTextColor="#555"
+                multiline
+                value={form.desc}
+                onChangeText={(v) => setForm((f) => ({ ...f, desc: v }))}
+              />
+            </View>
+
+            {/* BOTONES */}
             <View style={modalStyles.btns}>
-              <TouchableOpacity style={modalStyles.cancelBtn} onPress={onClose}>
+              <TouchableOpacity style={modalStyles.cancelBtn} onPress={onClose} activeOpacity={0.8}>
                 <Text style={modalStyles.cancelTxt}>Cancelar</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[modalStyles.saveBtn, saving && { opacity: 0.6 }]}
                 onPress={handleSave}
                 disabled={saving}
+                activeOpacity={0.8}
               >
                 {saving ? (
-                  <ActivityIndicator color="#0a110d" />
+                  <ActivityIndicator color="#0a110d" size="small" />
                 ) : (
                   <Text style={modalStyles.saveTxt}>{isEdit ? "Guardar Cambios" : "Crear Producto"}</Text>
                 )}
@@ -214,30 +342,52 @@ const ProductModal = ({ visible, product, onClose, onSaved }) => {
 };
 
 const AdminProductsScreen = () => {
-  // utilizamos el hook useAuth para obtener la función authFetch
   const { authFetch } = useAuth();
 
-  const [products, setProducts]     = useState([]);
-  const [loading, setLoading]       = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [search, setSearch]         = useState("");
-  const [showModal, setShowModal]   = useState(false);
-  const [editing, setEditing]       = useState(null);
+  const [products, setProducts]       = useState([]);
+  const [categories, setCategories]   = useState([]);
+  const [selectedFilter, setSelectedFilter] = useState("Todos");
+  const [loading, setLoading]         = useState(true);
+  const [refreshing, setRefreshing]   = useState(false);
+  const [search, setSearch]           = useState("");
+  const [showModal, setShowModal]     = useState(false);
+  const [editing, setEditing]         = useState(null);
 
-  // función para obtener la lista de productos desde la API del servidor
-  const loadProducts = async () => {
+  // Carga paralela de productos y categorías de la base de datos
+  const loadData = async () => {
     try {
-      const data = await authFetch("/products");
-      setProducts(Array.isArray(data) ? data : (data.products || data.data || []));
+      const [prodRes, catRes] = await Promise.allSettled([
+        authFetch("/products"),
+        authFetch("/categories"),
+      ]);
+
+      if (prodRes.status === "fulfilled") {
+        const data = prodRes.value;
+        setProducts(Array.isArray(data) ? data : data.products || data.data || []);
+      }
+
+      if (catRes.status === "fulfilled") {
+        const catData = catRes.value;
+        const list = Array.isArray(catData) ? catData : catData.categorias || catData.categories || [];
+        const names = list
+          .filter((c) => c.estado !== "Inactivo")
+          .map((c) => (c.nombre || c.name || "").trim())
+          .filter(Boolean);
+        setCategories(names);
+      }
     } catch (e) {
-      Alert.alert("Error", e.message);
+      console.warn("Error al cargar datos:", e.message);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   };
 
-  useFocusEffect(React.useCallback(() => { loadProducts(); }, []));
+  useFocusEffect(
+    React.useCallback(() => {
+      loadData();
+    }, [])
+  );
 
   const handleDelete = (item) => {
     const targetId = item.id || item._id;
@@ -254,9 +404,9 @@ const AdminProductsScreen = () => {
           onPress: async () => {
             try {
               await authFetch(`/products/${targetId}`, { method: "DELETE" });
-              loadProducts();
+              loadData();
             } catch (e) {
-              Alert.alert("Error", e.message);
+              Alert.alert("Error", e.message || "No se pudo eliminar.");
             }
           },
         },
@@ -264,106 +414,191 @@ const AdminProductsScreen = () => {
     );
   };
 
-  const filtered = products.filter(p => {
-    const name = p.name || p.nombreProducto || "";
-    const cat = p.category || p.idCategoria || "";
-    return name.toLowerCase().includes(search.toLowerCase()) ||
-           cat.toLowerCase().includes(search.toLowerCase());
+  // Filtro compuesto por barra de búsqueda y categoría seleccionada
+  const filtered = products.filter((p) => {
+    const name = (p.name || p.nombreProducto || "").toLowerCase();
+    const cat = (p.category || p.idCategoria || "").toLowerCase();
+    const q = search.toLowerCase();
+
+    const matchesSearch = !q || name.includes(q) || cat.includes(q);
+    const matchesFilter =
+      selectedFilter === "Todos" ||
+      cat === selectedFilter.toLowerCase() ||
+      cat.includes(selectedFilter.toLowerCase());
+
+    return matchesSearch && matchesFilter;
   });
 
   const renderItem = ({ item }) => {
     const name = item.name || item.nombreProducto || "Sin nombre";
     const cat = item.category || item.idCategoria || "Sin categoría";
-    const price = item.price !== undefined ? item.price : (item.precio || 0);
+    const price = item.price !== undefined ? item.price : item.precio || 0;
     const stock = item.stock !== undefined ? item.stock : 0;
-    const imgUrl = item.img || item.imagenProducto || "https://images.unsplash.com/photo-1587049352851-8d4e89134b3e?w=120";
+    const imgUrl =
+      item.img ||
+      item.imagenProducto ||
+      "https://images.unsplash.com/photo-1587049352851-8d4e89134b3e?w=120";
 
     return (
       <View style={styles.card}>
-        <Image
-          source={{ uri: imgUrl }}
-          style={styles.img}
-        />
+        <Image source={{ uri: imgUrl }} style={styles.img} />
         <View style={styles.info}>
-          <Text style={styles.name} numberOfLines={1}>{name}</Text>
+          <Text style={styles.name} numberOfLines={1}>
+            {name}
+          </Text>
           <Text style={styles.cat}>{cat}</Text>
           <Text style={styles.price}>${parseFloat(price).toFixed(2)}</Text>
         </View>
 
         <View style={styles.actions}>
-          <View style={[styles.stockBadge, { backgroundColor: stock <= 15 ? "rgba(239, 68, 68, 0.12)" : "rgba(48, 180, 102, 0.12)" }]}>
-            <Text style={[styles.stockTxt, { color: stock <= 15 ? "#ef4444" : "#30b466" }]}>
+          <View
+            style={[
+              styles.stockBadge,
+              {
+                backgroundColor:
+                  stock <= 15 ? "rgba(239, 68, 68, 0.12)" : "rgba(48, 180, 102, 0.12)",
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.stockTxt,
+                { color: stock <= 15 ? "#ef4444" : "#30b466" },
+              ]}
+            >
               {stock} u.
             </Text>
           </View>
 
           <TouchableOpacity
-            style={styles.iconBtn}
+            style={styles.editBtn}
             onPress={() => {
               setEditing(item);
               setShowModal(true);
             }}
+            activeOpacity={0.8}
           >
-            <Ionicons name="create-outline" size={18} color="#30b466" />
+            <Ionicons name="create-outline" size={16} color="#30b466" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.iconBtn, { backgroundColor: "rgba(239, 68, 68, 0.1)" }]} onPress={() => handleDelete(item)}>
-            <Ionicons name="trash-outline" size={18} color="#ef4444" />
+          <TouchableOpacity
+            style={styles.delBtn}
+            onPress={() => handleDelete(item)}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="trash-outline" size={16} color="#ef4444" />
           </TouchableOpacity>
         </View>
       </View>
     );
   };
 
-  if (loading) return (
-    <View style={{ flex: 1, backgroundColor: "#0a0d0f", justifyContent: "center", alignItems: "center" }}>
-      <ActivityIndicator size="large" color="#30b466" />
-    </View>
-  );
+  const filterTabs = ["Todos", ...categories];
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#0a0d0f" }}>
-      <View style={styles.topBar}>
-        <View style={styles.searchBox}>
-          <Ionicons name="search" size={16} color="#555" />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Buscar producto..."
-            placeholderTextColor="#444"
-            value={search}
-            onChangeText={setSearch}
-          />
+    <View style={styles.container}>
+      {/* CABECERA */}
+      <View style={styles.header}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.title}>Catálogo e Inventario</Text>
+          <Text style={styles.subtitle}>
+            {products.length} productos registrados · {filtered.length} visibles
+          </Text>
         </View>
-        <TouchableOpacity style={styles.addBtn} onPress={() => { setEditing(null); setShowModal(true); }}>
-          <Ionicons name="add" size={22} color="#0a110d" />
+        <TouchableOpacity
+          style={styles.addBtn}
+          onPress={() => {
+            setEditing(null);
+            setShowModal(true);
+          }}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="add" size={18} color="#0a110d" />
+          <Text style={styles.addBtnTxt}>Nuevo</Text>
         </TouchableOpacity>
       </View>
 
-      <FlatList
-        data={filtered}
-        keyExtractor={item => item._id || item.id || String(Math.random())}
-        renderItem={renderItem}
-        contentContainerStyle={{ padding: 15 }}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={() => { setRefreshing(true); loadProducts(); }}
-            tintColor="#30b466"
-          />
-        }
-        ListEmptyComponent={
-          <Text style={{ color: "#555", textAlign: "center", marginTop: 60 }}>Sin productos registrados</Text>
-        }
-      />
+      {/* BARRA DE BÚSQUEDA */}
+      <View style={styles.searchBar}>
+        <Ionicons name="search-outline" size={16} color="#666" />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Buscar producto por nombre o categoría..."
+          placeholderTextColor="#555"
+          value={search}
+          onChangeText={setSearch}
+        />
+        {search.length > 0 && (
+          <TouchableOpacity onPress={() => setSearch("")}>
+            <Ionicons name="close-circle" size={16} color="#666" />
+          </TouchableOpacity>
+        )}
+      </View>
 
+      {/* FILTRO HORIZONTAL DE CATEGORÍAS */}
+      {categories.length > 0 && (
+        <View style={styles.filterContainer}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterScroll}
+          >
+            {filterTabs.map((cat, idx) => {
+              const active = selectedFilter === cat;
+              return (
+                <TouchableOpacity
+                  key={idx}
+                  style={[styles.filterTab, active && styles.filterTabActive]}
+                  onPress={() => setSelectedFilter(cat)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.filterTabTxt, active && styles.filterTabTxtActive]}>
+                    {cat}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+      )}
+
+      {/* LISTA DE PRODUCTOS */}
+      {loading ? (
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color="#30b466" />
+        </View>
+      ) : (
+        <FlatList
+          data={filtered}
+          keyExtractor={(item) => String(item.id || item._id)}
+          renderItem={renderItem}
+          contentContainerStyle={styles.list}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => {
+                setRefreshing(true);
+                loadData();
+              }}
+              tintColor="#30b466"
+            />
+          }
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <Ionicons name="cube-outline" size={44} color="#333" />
+              <Text style={styles.emptyTxt}>No se encontraron productos</Text>
+            </View>
+          }
+        />
+      )}
+
+      {/* MODAL CREAR / EDITAR PRODUCTO */}
       <ProductModal
         visible={showModal}
         product={editing}
-        onClose={() => {
-          setShowModal(false);
-          setEditing(null);
-        }}
-        onSaved={loadProducts}
+        categories={categories}
+        onClose={() => setShowModal(false)}
+        onSaved={loadData}
       />
     </View>
   );
@@ -372,37 +607,192 @@ const AdminProductsScreen = () => {
 export default AdminProductsScreen;
 
 const styles = StyleSheet.create({
-  topBar: { flexDirection: "row", padding: 15, gap: 10 },
-  searchBox: { flex: 1, flexDirection: "row", alignItems: "center", backgroundColor: "#121619", borderRadius: 10, paddingHorizontal: 12, borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.1)" },
-  searchInput: { flex: 1, color: "#fff", paddingVertical: 10, paddingLeft: 8, fontSize: 14 },
-  addBtn: { width: 44, height: 44, backgroundColor: "#30b466", borderRadius: 10, justifyContent: "center", alignItems: "center" },
-  card: { backgroundColor: "#121619", borderRadius: 12, padding: 12, marginBottom: 10, flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.1)" },
-  img: { width: 58, height: 58, borderRadius: 10 },
+  container: { flex: 1, backgroundColor: "#0a0d0f" },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 8,
+  },
+  title: { fontSize: 18, fontWeight: "bold", color: "#fff" },
+  subtitle: { fontSize: 11, color: "#666", marginTop: 1 },
+  addBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#30b466",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+    gap: 4,
+  },
+  addBtnTxt: { color: "#0a110d", fontWeight: "bold", fontSize: 13 },
+  searchBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#121619",
+    marginHorizontal: 16,
+    marginTop: 6,
+    marginBottom: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+    gap: 8,
+  },
+  searchInput: { flex: 1, color: "#fff", height: 40, fontSize: 13 },
+  filterContainer: { marginBottom: 8 },
+  filterScroll: { paddingHorizontal: 16, gap: 8 },
+  filterTab: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: "#121619",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.06)",
+  },
+  filterTabActive: {
+    backgroundColor: "rgba(48, 180, 102, 0.15)",
+    borderColor: "#30b466",
+  },
+  filterTabTxt: { color: "#777", fontSize: 12, fontWeight: "600" },
+  filterTabTxtActive: { color: "#4ade80", fontWeight: "bold" },
+  center: { flex: 1, justifyContent: "center", alignItems: "center" },
+  list: { paddingHorizontal: 16, paddingBottom: 24 },
+  card: {
+    flexDirection: "row",
+    backgroundColor: "#161b1e",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 10,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.06)",
+  },
+  img: { width: 54, height: 54, borderRadius: 8, backgroundColor: "#111" },
   info: { flex: 1, marginLeft: 12 },
-  name: { color: "#fff", fontSize: 15, fontWeight: "600" },
-  cat: { color: "#555", fontSize: 12, marginTop: 2 },
-  price: { color: "#4ade80", fontSize: 14, fontWeight: "bold", marginTop: 3 },
-  actions: { alignItems: "center", gap: 6 },
-  stockBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+  name: { color: "#fff", fontSize: 14, fontWeight: "bold" },
+  cat: { color: "#777", fontSize: 11, marginTop: 2 },
+  price: { color: "#4ade80", fontSize: 14, fontWeight: "bold", marginTop: 4 },
+  actions: { alignItems: "flex-end", gap: 6 },
+  stockBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
   stockTxt: { fontSize: 11, fontWeight: "bold" },
-  iconBtn: { width: 32, height: 32, borderRadius: 8, backgroundColor: "rgba(48, 180, 102, 0.1)", justifyContent: "center", alignItems: "center" },
+  editBtn: {
+    padding: 6,
+    backgroundColor: "rgba(48,180,102,0.12)",
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "rgba(48,180,102,0.2)",
+  },
+  delBtn: {
+    padding: 6,
+    backgroundColor: "rgba(239,68,68,0.1)",
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "rgba(239,68,68,0.2)",
+  },
+  empty: { alignItems: "center", justifyContent: "center", paddingVertical: 60 },
+  emptyTxt: { color: "#555", marginTop: 10, fontSize: 13 },
 });
 
 const modalStyles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: "rgba(0, 0, 0, 0.8)", justifyContent: "flex-end" },
-  sheet: { backgroundColor: "#121619", borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: "92%" },
-  hdr: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 },
-  title: { color: "#fff", fontSize: 18, fontWeight: "bold" },
-  imgBox: { alignSelf: "center", marginBottom: 20 },
-  imgPlaceholder: { width: 110, height: 110, borderRadius: 14, borderWidth: 2, borderColor: "rgba(48, 180, 102, 0.25)", borderStyle: "dashed", justifyContent: "center", alignItems: "center", backgroundColor: "rgba(48, 180, 102, 0.06)" },
-  imgPreview: { width: 110, height: 110, borderRadius: 14 },
-  imgText: { color: "#30b466", fontSize: 12, marginTop: 6 },
-  field: { marginBottom: 14 },
-  lbl: { color: "#555", fontSize: 11, fontWeight: "600", textTransform: "uppercase", letterSpacing: 1, marginBottom: 7 },
-  inp: { backgroundColor: "#0d1114", borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.15)", borderRadius: 10, paddingHorizontal: 14, paddingVertical: 11, color: "#fff", fontSize: 14 },
-  btns: { flexDirection: "row", gap: 10, marginTop: 10, marginBottom: 8 },
-  cancelBtn: { flex: 1, paddingVertical: 13, borderRadius: 10, borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.15)", alignItems: "center" },
-  cancelTxt: { color: "#888", fontSize: 14 },
-  saveBtn: { flex: 2, paddingVertical: 13, borderRadius: 10, backgroundColor: "#30b466", alignItems: "center" },
-  saveTxt: { color: "#0a110d", fontSize: 14, fontWeight: "bold" },
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.75)",
+    justifyContent: "flex-end",
+  },
+  sheet: {
+    backgroundColor: "#161b1e",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    maxHeight: "88%",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+  },
+  hdr: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255,255,255,0.06)",
+  },
+  title: { color: "#fff", fontSize: 17, fontWeight: "bold" },
+  imgBox: {
+    height: 100,
+    backgroundColor: "#0d1114",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+    borderStyle: "dashed",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 14,
+    overflow: "hidden",
+  },
+  imgPreview: { width: "100%", height: "100%", resizeMode: "cover" },
+  imgPlaceholder: { alignItems: "center", gap: 4 },
+  imgText: { color: "#777", fontSize: 11, fontWeight: "600" },
+  field: { marginBottom: 12 },
+  lbl: { color: "#888", fontSize: 11, fontWeight: "bold", textTransform: "uppercase", marginBottom: 5 },
+  inp: {
+    backgroundColor: "#0d1114",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+    borderRadius: 8,
+    color: "#fff",
+    paddingHorizontal: 12,
+    height: 42,
+    fontSize: 13,
+  },
+  catChipsWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  catChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#0d1114",
+    borderWidth: 1,
+    borderColor: "rgba(48,180,102,0.25)",
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 8,
+  },
+  catChipActive: {
+    backgroundColor: "#30b466",
+    borderColor: "#30b466",
+  },
+  catChipTxt: {
+    color: "#4ade80",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  catChipTxtActive: {
+    color: "#0a110d",
+    fontWeight: "bold",
+  },
+  btns: { flexDirection: "row", gap: 10, marginTop: 12, marginBottom: 20 },
+  cancelBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+    alignItems: "center",
+  },
+  cancelTxt: { color: "#888", fontSize: 13.5, fontWeight: "bold" },
+  saveBtn: {
+    flex: 1.5,
+    backgroundColor: "#30b466",
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  saveTxt: { color: "#0a110d", fontSize: 13.5, fontWeight: "bold" },
 });

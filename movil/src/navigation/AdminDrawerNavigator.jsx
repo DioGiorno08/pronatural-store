@@ -1,16 +1,20 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   Animated,
-  Dimensions,
+  useWindowDimensions,
   ScrollView,
   Image,
   Alert,
   StatusBar,
+  Modal,
+  BackHandler,
+  Platform,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import useAuth from "../hooks/useAuth";
 
@@ -26,40 +30,68 @@ import AdminSettingsScreen from "../screens/AdminSettingsScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 
 const logoProNatural = require("../../assets/logopronatural.png");
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const DRAWER_WIDTH = Math.min(SCREEN_WIDTH * 0.82, 330);
 
 const MENU_ITEMS = [
-  { id: "Dashboard",  label: "Resumen General",        icon: "stats-chart-outline",  activeIcon: "stats-chart" },
-  { id: "Products",   label: "Productos e Inventario", icon: "cube-outline",         activeIcon: "cube" },
+  { id: "Dashboard",  label: "Panel Principal",        icon: "stats-chart-outline",  activeIcon: "stats-chart" },
+  { id: "Products",   label: "Catálogo e Inventario", icon: "cube-outline",         activeIcon: "cube" },
   { id: "Categories", label: "Categorías",             icon: "pricetags-outline",    activeIcon: "pricetags" },
   { id: "Sales",      label: "Ventas y Pedidos",       icon: "receipt-outline",      activeIcon: "receipt" },
-  { id: "Customers",  label: "Directorio Clientes",    icon: "people-outline",       activeIcon: "people" },
-  { id: "Sellers",    label: "Equipo y Vendedores",    icon: "briefcase-outline",    activeIcon: "briefcase" },
-  { id: "Reports",    label: "Reportes Ejecutivos PDF",icon: "document-text-outline",activeIcon: "document-text" },
-  { id: "Settings",   label: "Ajustes del Sistema",    icon: "settings-outline",     activeIcon: "settings" },
+  { id: "Customers",  label: "Clientes",               icon: "people-outline",       activeIcon: "people" },
+  { id: "Sellers",    label: "Vendedores",             icon: "briefcase-outline",    activeIcon: "briefcase" },
+  { id: "Reports",    label: "Reportes",               icon: "document-text-outline",activeIcon: "document-text" },
+  { id: "Settings",   label: "Ajustes",                icon: "settings-outline",     activeIcon: "settings" },
   { id: "Profile",    label: "Mi Perfil",              icon: "person-circle-outline",activeIcon: "person-circle" },
 ];
 
 const AdminDrawerNavigator = ({ navigation: rootNav }) => {
   const { user, logout } = useAuth();
+  const insets = useSafeAreaInsets();
+  const { width: SCREEN_WIDTH } = useWindowDimensions();
+  const DRAWER_WIDTH = Math.min(Math.round(SCREEN_WIDTH * 0.82), 330);
+
   const [activeScreen, setActiveScreen] = useState("Dashboard");
-  const [drawerOpen, setDrawerOpen]     = useState(false);
+  const [screenHistory, setScreenHistory] = useState(["Dashboard"]);
+  const [drawerVisible, setDrawerVisible] = useState(false);
 
   const slideAnim   = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
+  // Manejador del botón físico "Atrás" en Android
+  useEffect(() => {
+    const onBackPress = () => {
+      if (drawerVisible) {
+        closeDrawer();
+        return true;
+      }
+      if (screenHistory.length > 1) {
+        goBack();
+        return true;
+      }
+      if (activeScreen !== "Dashboard") {
+        navigateTo("Dashboard");
+        return true;
+      }
+      return false; // Permite salir de la app si ya está en Dashboard
+    };
+
+    const backSubscription = BackHandler.addEventListener(
+      "hardwareBackPress",
+      onBackPress
+    );
+    return () => backSubscription.remove();
+  }, [drawerVisible, screenHistory, activeScreen]);
+
   const openDrawer = () => {
-    setDrawerOpen(true);
+    setDrawerVisible(true);
     Animated.parallel([
       Animated.timing(slideAnim, {
         toValue: 0,
-        duration: 250,
+        duration: 240,
         useNativeDriver: true,
       }),
       Animated.timing(opacityAnim, {
         toValue: 1,
-        duration: 250,
+        duration: 240,
         useNativeDriver: true,
       }),
     ]).start();
@@ -69,23 +101,42 @@ const AdminDrawerNavigator = ({ navigation: rootNav }) => {
     Animated.parallel([
       Animated.timing(slideAnim, {
         toValue: -DRAWER_WIDTH,
-        duration: 220,
+        duration: 200,
         useNativeDriver: true,
       }),
       Animated.timing(opacityAnim, {
         toValue: 0,
-        duration: 220,
+        duration: 200,
         useNativeDriver: true,
       }),
     ]).start(() => {
-      setDrawerOpen(false);
+      setDrawerVisible(false);
       if (callback) callback();
     });
   };
 
+  const navigateTo = (screenId) => {
+    if (screenId === activeScreen) return;
+    setScreenHistory((prev) => [...prev, screenId]);
+    setActiveScreen(screenId);
+  };
+
+  const goBack = () => {
+    if (screenHistory.length > 1) {
+      const nextHistory = [...screenHistory];
+      nextHistory.pop(); // Remove current
+      const prevScreen = nextHistory[nextHistory.length - 1];
+      setScreenHistory(nextHistory);
+      setActiveScreen(prevScreen);
+    } else if (activeScreen !== "Dashboard") {
+      setActiveScreen("Dashboard");
+      setScreenHistory(["Dashboard"]);
+    }
+  };
+
   const handleSelectScreen = (screenId) => {
     closeDrawer(() => {
-      setActiveScreen(screenId);
+      navigateTo(screenId);
     });
   };
 
@@ -107,7 +158,7 @@ const AdminDrawerNavigator = ({ navigation: rootNav }) => {
     );
   };
 
-  // Objeto de navegación personalizado para que las pantallas internas puedan cambiar de vista
+  // Objeto de navegación personalizado accesible para todas las pantallas hijas
   const customNavigation = {
     ...rootNav,
     navigate: (screenName) => {
@@ -115,11 +166,13 @@ const AdminDrawerNavigator = ({ navigation: rootNav }) => {
         (m) => m.id.toLowerCase() === screenName.toLowerCase()
       );
       if (match) {
-        setActiveScreen(match.id);
+        navigateTo(match.id);
       } else if (rootNav?.navigate) {
         rootNav.navigate(screenName);
       }
     },
+    goBack,
+    canGoBack: () => screenHistory.length > 1 || activeScreen !== "Dashboard",
     openDrawer,
     closeDrawer,
   };
@@ -159,48 +212,94 @@ const AdminDrawerNavigator = ({ navigation: rootNav }) => {
     .slice(0, 2)
     .toUpperCase();
   const userRole = user?.role === "Employee" ? "Vendedor" : "Administrador";
+  const isSubScreen = activeScreen !== "Dashboard";
+
+  // Altura adaptativa de notch/barra de estado para cualquier celular
+  const topInsetHeight = Math.max(
+    insets.top,
+    Platform.OS === "android" ? StatusBar.currentHeight || 24 : 38
+  );
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#0d1114" />
+      <StatusBar barStyle="light-content" backgroundColor="#0a0d0f" translucent={true} />
 
-      {/* HEADER SUPERIOR CON MENÚ DE HAMBURGUESA (☰) */}
-      <View style={styles.topHeader}>
-        <TouchableOpacity
-          style={styles.hamburgerBtn}
-          onPress={openDrawer}
-          activeOpacity={0.7}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-        >
-          <Ionicons name="menu-outline" size={28} color="#fff" />
-        </TouchableOpacity>
+      {/* HEADER SUPERIOR CON BOTÓN REGRESAR (←) Y MENÚ DE HAMBURGUESA (☰) */}
+      <View
+        style={[
+          styles.topHeader,
+          {
+            paddingTop: topInsetHeight + 4,
+            height: topInsetHeight + 58,
+          },
+        ]}
+      >
+        <View style={styles.headerLeft}>
+          {/* BOTÓN REGRESAR (Se muestra en todas las pantallas secundarias) */}
+          {isSubScreen && (
+            <TouchableOpacity
+              style={styles.backBtn}
+              onPress={goBack}
+              activeOpacity={0.7}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              <Ionicons name="arrow-back" size={22} color="#fff" />
+            </TouchableOpacity>
+          )}
 
-        <View style={styles.titleWrap}>
-          <View style={styles.indicatorDot} />
-          <Text style={styles.headerTitle}>{currentItem.label}</Text>
+          {/* BOTÓN HAMBURGUESA (Siempre visible para abrir el drawer) */}
+          <TouchableOpacity
+            style={[styles.hamburgerBtn, isSubScreen && styles.hamburgerBtnCompact]}
+            onPress={openDrawer}
+            activeOpacity={0.7}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          >
+            <Ionicons name="menu" size={24} color="#30b466" />
+          </TouchableOpacity>
         </View>
 
-        <TouchableOpacity
-          style={styles.profileBadge}
-          onPress={() => setActiveScreen("Profile")}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.profileBadgeTxt}>{userInitials}</Text>
-        </TouchableOpacity>
+        {/* TÍTULO DE LA PANTALLA ACTIVA */}
+        <View style={styles.titleWrap}>
+          <View style={styles.indicatorDot} />
+          <Text style={styles.headerTitle} numberOfLines={1}>
+            {currentItem.label}
+          </Text>
+        </View>
+
+        {/* PERFIL / INICIALES EN LA DERECHA */}
+        <View style={styles.headerRight}>
+          <TouchableOpacity
+            style={styles.profileBadge}
+            onPress={() => handleSelectScreen("Profile")}
+            activeOpacity={0.8}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={styles.profileBadgeTxt}>{userInitials}</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {/* CONTENIDO DE LA PANTALLA ACTIVA */}
-      <View style={styles.screenContent}>
+      {/* CONTENIDO DE LA PANTALLA ACTIVA CON SAFE AREA INFERIOR */}
+      <View
+        style={[
+          styles.screenContent,
+          { paddingBottom: Math.max(insets.bottom, 6) },
+        ]}
+      >
         {renderActiveScreen()}
       </View>
 
-      {/* MENÚ DE HAMBURGUESA LATERAL (DRAWER) CON FONDO OSCURECIDO */}
-      {drawerOpen && (
-        <View style={StyleSheet.absoluteFillObject} pointerEvents="box-none">
-          {/* BACKDROP CON OPACIDAD ANIMADA */}
-          <Animated.View
-            style={[styles.backdrop, { opacity: opacityAnim }]}
-          >
+      {/* MODAL NATIVO DEL DRAWER: COMPATIBILIDAD TOTAL ANDROID / IOS */}
+      <Modal
+        visible={drawerVisible}
+        transparent={true}
+        animationType="none"
+        statusBarTranslucent={true}
+        onRequestClose={closeDrawer}
+      >
+        <View style={styles.modalRoot}>
+          {/* BACKDROP OSCURO CON OPACIDAD ANIMADA */}
+          <Animated.View style={[styles.backdrop, { opacity: opacityAnim }]}>
             <TouchableOpacity
               style={StyleSheet.absoluteFillObject}
               onPress={() => closeDrawer()}
@@ -212,7 +311,12 @@ const AdminDrawerNavigator = ({ navigation: rootNav }) => {
           <Animated.View
             style={[
               styles.drawerPanel,
-              { transform: [{ translateX: slideAnim }] },
+              {
+                width: DRAWER_WIDTH,
+                paddingTop: topInsetHeight + 12,
+                paddingBottom: Math.max(insets.bottom, 16) + 12,
+                transform: [{ translateX: slideAnim }],
+              },
             ]}
           >
             {/* ENCABEZADO DEL DRAWER */}
@@ -226,9 +330,10 @@ const AdminDrawerNavigator = ({ navigation: rootNav }) => {
                 <TouchableOpacity
                   style={styles.closeBtn}
                   onPress={() => closeDrawer()}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                  activeOpacity={0.7}
                 >
-                  <Ionicons name="close" size={22} color="#888" />
+                  <Ionicons name="close" size={22} color="#aaa" />
                 </TouchableOpacity>
               </View>
 
@@ -256,6 +361,7 @@ const AdminDrawerNavigator = ({ navigation: rootNav }) => {
               style={styles.menuScroll}
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{ paddingVertical: 10 }}
+              bounces={false}
             >
               <Text style={styles.menuSectionTitle}>PORTAL ADMINISTRATIVO</Text>
 
@@ -269,7 +375,7 @@ const AdminDrawerNavigator = ({ navigation: rootNav }) => {
                       isActive && styles.menuItemActive,
                     ]}
                     onPress={() => handleSelectScreen(item.id)}
-                    activeOpacity={0.8}
+                    activeOpacity={0.75}
                   >
                     <View
                       style={[
@@ -280,7 +386,7 @@ const AdminDrawerNavigator = ({ navigation: rootNav }) => {
                       <Ionicons
                         name={isActive ? item.activeIcon : item.icon}
                         size={20}
-                        color={isActive ? "#30b466" : "#777"}
+                        color={isActive ? "#30b466" : "#888"}
                       />
                     </View>
                     <Text
@@ -288,6 +394,7 @@ const AdminDrawerNavigator = ({ navigation: rootNav }) => {
                         styles.menuItemText,
                         isActive && styles.menuItemTextActive,
                       ]}
+                      numberOfLines={1}
                     >
                       {item.label}
                     </Text>
@@ -310,12 +417,12 @@ const AdminDrawerNavigator = ({ navigation: rootNav }) => {
                 <Text style={styles.logoutBtnTxt}>Cerrar Sesión</Text>
               </TouchableOpacity>
               <Text style={styles.versionTxt}>
-                ProNatural Admin · v1.0.0
+                ProNatural Store · Administración
               </Text>
             </View>
           </Animated.View>
         </View>
-      )}
+      </Modal>
     </View>
   );
 };
@@ -323,45 +430,75 @@ const AdminDrawerNavigator = ({ navigation: rootNav }) => {
 export default AdminDrawerNavigator;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0a0d0f" },
+  container: {
+    flex: 1,
+    backgroundColor: "#0a0d0f",
+  },
 
-  // Barra superior principal
+  // Barra superior principal adaptativa
   topHeader: {
-    height: 60,
     backgroundColor: "#0d1114",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     borderBottomWidth: 1,
     borderBottomColor: "rgba(255, 255, 255, 0.08)",
   },
-  hamburgerBtn: {
-    width: 42,
-    height: 42,
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  backBtn: {
+    width: 38,
+    height: 38,
     borderRadius: 10,
     backgroundColor: "#161b1f",
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderColor: "rgba(255, 255, 255, 0.12)",
+  },
+  hamburgerBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: "#161b1f",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(48, 180, 102, 0.25)",
+  },
+  hamburgerBtnCompact: {
+    width: 36,
+    height: 36,
+    borderRadius: 9,
   },
   titleWrap: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 8,
     gap: 8,
   },
   indicatorDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
     backgroundColor: "#30b466",
   },
   headerTitle: {
     color: "#fff",
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "bold",
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
+    textAlign: "center",
+  },
+  headerRight: {
+    minWidth: 40,
+    alignItems: "flex-end",
   },
   profileBadge: {
     width: 36,
@@ -379,31 +516,38 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
 
-  screenContent: { flex: 1 },
+  screenContent: {
+    flex: 1,
+    backgroundColor: "#0a0d0f",
+  },
 
-  // Drawer modal
+  // Raíz del modal que ocupa 100% de la pantalla nativa
+  modalRoot: {
+    flex: 1,
+  },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0, 0, 0, 0.75)",
+    backgroundColor: "rgba(0, 0, 0, 0.72)",
   },
   drawerPanel: {
     position: "absolute",
     top: 0,
     bottom: 0,
     left: 0,
-    width: DRAWER_WIDTH,
     backgroundColor: "#0d1114",
     borderRightWidth: 1,
     borderRightColor: "rgba(255, 255, 255, 0.1)",
-    paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 36,
-    display: "flex",
-    flexDirection: "column",
+    shadowColor: "#000",
+    shadowOffset: { width: 4, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    elevation: 25,
   },
 
   // Cabecera del Drawer
   drawerHeader: {
-    paddingHorizontal: 20,
-    paddingBottom: 16,
+    paddingHorizontal: 18,
+    paddingBottom: 14,
     borderBottomWidth: 1,
     borderBottomColor: "rgba(255, 255, 255, 0.06)",
   },
@@ -411,33 +555,35 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 14,
   },
   logoImage: {
     width: 140,
-    height: 40,
+    height: 38,
   },
   closeBtn: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
     justifyContent: "center",
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.08)",
   },
   userInfoCard: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#121619",
-    borderRadius: 14,
-    padding: 12,
+    borderRadius: 12,
+    padding: 10,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.08)",
   },
   drawerAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     backgroundColor: "rgba(48, 180, 102, 0.15)",
     borderWidth: 1.5,
     borderColor: "#30b466",
@@ -446,16 +592,16 @@ const styles = StyleSheet.create({
   },
   drawerAvatarTxt: {
     color: "#30b466",
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "bold",
   },
   drawerUserName: {
     color: "#fff",
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "bold",
   },
   drawerUserEmail: {
-    color: "#666",
+    color: "#777",
     fontSize: 11,
     marginTop: 1,
   },
@@ -477,23 +623,26 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 
-  // Lista de items
-  menuScroll: { flex: 1, paddingHorizontal: 12 },
+  // Lista de items del menú
+  menuScroll: {
+    flex: 1,
+    paddingHorizontal: 12,
+  },
   menuSectionTitle: {
     color: "#555",
     fontSize: 10,
     fontWeight: "700",
     letterSpacing: 1.2,
-    marginLeft: 12,
-    marginTop: 10,
+    marginLeft: 10,
+    marginTop: 8,
     marginBottom: 8,
   },
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 12,
+    paddingVertical: 11,
     paddingHorizontal: 12,
-    borderRadius: 12,
+    borderRadius: 10,
     marginBottom: 4,
   },
   menuItemActive: {
@@ -502,20 +651,20 @@ const styles = StyleSheet.create({
     borderColor: "rgba(48, 180, 102, 0.25)",
   },
   menuIconWrap: {
-    width: 34,
-    height: 34,
+    width: 32,
+    height: 32,
     borderRadius: 8,
     backgroundColor: "rgba(255, 255, 255, 0.03)",
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    marginRight: 10,
   },
   menuIconWrapActive: {
     backgroundColor: "rgba(48, 180, 102, 0.2)",
   },
   menuItemText: {
     color: "#888",
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: "500",
     flex: 1,
   },
@@ -524,15 +673,16 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   activeIndicatorBar: {
-    width: 4,
-    height: 18,
+    width: 3.5,
+    height: 16,
     borderRadius: 2,
     backgroundColor: "#30b466",
   },
 
   // Pie del drawer
   drawerFooter: {
-    padding: 16,
+    paddingHorizontal: 14,
+    paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: "rgba(255, 255, 255, 0.06)",
   },
@@ -544,18 +694,18 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(239, 68, 68, 0.1)",
     borderWidth: 1,
     borderColor: "rgba(239, 68, 68, 0.25)",
-    paddingVertical: 12,
+    paddingVertical: 11,
     borderRadius: 10,
-    marginBottom: 10,
+    marginBottom: 8,
   },
   logoutBtnTxt: {
     color: "#ef4444",
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: "bold",
   },
   versionTxt: {
     color: "#444",
     textAlign: "center",
-    fontSize: 11,
+    fontSize: 10.5,
   },
 });
