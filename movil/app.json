@@ -4,13 +4,8 @@
     "slug": "pronatural-movil",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "dark",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0a0d0f"
-    },
+    "icon": "./assets/app-icon-square.png",
+    "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true
     },
@@ -23,10 +18,8 @@
         "WRITE_EXTERNAL_STORAGE"
       ],
       "adaptiveIcon": {
-        "backgroundColor": "#0a0d0f",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+      "backgroundColor": "#faf9f6",
+        "foregroundImage": "./assets/app-icon-square.png"
       }
     },
     "web": {
@@ -38,8 +31,18 @@
       }
     },
     "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#faf9f6"
+        }
+      ],
       "expo-sharing",
-      "expo-status-bar"
+      "expo-status-bar",
+      "expo-font"
     ]
   }
 }

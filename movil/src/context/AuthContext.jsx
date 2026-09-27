@@ -1,7 +1,8 @@
 import React, { createContext, useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import { getApiBaseUrl, setApiBaseUrl, resetApiBaseUrl, DEFAULT_CLOUD_URL } from "../config/apiConfig";
+import { getApiBaseUrl } from "../config/apiConfig";
+import { isAdministrativeUser } from "../utils/accessControl";
 
 // creamos el contexto de autenticación para compartir la sesión en la app
 export const AuthContext = createContext();
@@ -14,22 +15,21 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   // estado para controlar si la app está verificando la sesión inicial
   const [loading, setLoading] = useState(true);
-  // estado para la URL activa del servidor (por defecto en la nube HTTPS de Render)
-  const [apiUrl, setApiUrl] = useState(DEFAULT_CLOUD_URL);
-
   // al montar el componente, verificamos si existe una sesión previa guardada y la URL de API
   useEffect(() => {
     const loadSession = async () => {
       try {
-        const currentApi = await getApiBaseUrl();
-        setApiUrl(currentApi);
-
         const savedToken = await AsyncStorage.getItem("authCookie");
         const savedUser = await AsyncStorage.getItem("userInfo");
 
         if (savedToken && savedUser) {
-          setToken(savedToken);
-          setUser(JSON.parse(savedUser));
+          const parsedUser = JSON.parse(savedUser);
+          if (isAdministrativeUser(parsedUser)) {
+            setToken(savedToken);
+            setUser(parsedUser);
+          } else {
+            await AsyncStorage.multiRemove(["authCookie", "userInfo"]);
+          }
         }
       } catch (error) {
         console.error("Error al cargar la sesión guardada:", error);
@@ -41,22 +41,21 @@ export const AuthProvider = ({ children }) => {
     loadSession();
   }, []);
 
-  // función para actualizar la URL del backend
-  const changeApiUrl = async (newUrl) => {
-    const updated = await setApiBaseUrl(newUrl);
-    setApiUrl(updated);
-    return updated;
-  };
-
-  const restoreDefaultApiUrl = async () => {
-    const def = await resetApiBaseUrl();
-    setApiUrl(def);
-    return def;
+  const updateUserProfile = async (profileData) => {
+    const data = await authFetch("/auth/profile", {
+      method: "PUT",
+      body: JSON.stringify(profileData),
+    });
+    if (data.user) {
+      await AsyncStorage.setItem("userInfo", JSON.stringify(data.user));
+      setUser(data.user);
+    }
+    return data;
   };
 
   // función para iniciar sesión consumiendo el endpoint del backend
   const login = async (email, password) => {
-    const currentApi = apiUrl || (await getApiBaseUrl());
+    const currentApi = await getApiBaseUrl();
     const response = await fetch(`${currentApi}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -67,6 +66,14 @@ export const AuthProvider = ({ children }) => {
 
     if (!response.ok) {
       throw new Error(data.message || "Credenciales incorrectas.");
+    }
+
+    if (!isAdministrativeUser(data.user)) {
+      throw new Error("Esta aplicación es solo para personal administrativo.");
+    }
+
+    if (!data.token) {
+      throw new Error("El servidor no devolvió una sesión válida.");
     }
 
     // guardamos el token e información del usuario en AsyncStorage
@@ -83,7 +90,7 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       if (token) {
-        const currentApi = apiUrl || (await getApiBaseUrl());
+        const currentApi = await getApiBaseUrl();
         await fetch(`${currentApi}/auth/logout`, {
           method: "POST",
           headers: { Cookie: `authCookie=${token}` },
@@ -102,7 +109,7 @@ export const AuthProvider = ({ children }) => {
 
   // función auxiliar para realizar peticiones HTTP incluyendo la cookie de autenticación
   const authFetch = async (endpoint, options = {}) => {
-    const currentApi = apiUrl || (await getApiBaseUrl());
+    const currentApi = await getApiBaseUrl();
     const res = await fetch(`${currentApi}${endpoint}`, {
       headers: {
         "Content-Type": "application/json",
@@ -128,12 +135,10 @@ export const AuthProvider = ({ children }) => {
         user,
         token,
         loading,
-        apiUrl,
         login,
         logout,
         authFetch,
-        changeApiUrl,
-        restoreDefaultApiUrl,
+        updateUserProfile,
       }}
     >
       {children}
