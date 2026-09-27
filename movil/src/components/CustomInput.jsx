@@ -19,7 +19,7 @@ const CustomInput = ({
       <TextInput
         style={[styles.input, inputStyle]}
         placeholder={placeholder}
-        placeholderTextColor="#444"
+        placeholderTextColor="#66736B"
         value={value}
         onChangeText={onChangeText}
         secureTextEntry={secureTextEntry}
@@ -37,7 +37,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   label: {
-    color: "#555",
+    color: "#66736B",
     fontSize: 11,
     fontWeight: "600",
     textTransform: "uppercase",
@@ -45,13 +45,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   input: {
-    backgroundColor: "#0d1114",
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.15)",
+    borderColor: "rgba(16, 43, 30, 0.15)",
     borderRadius: 10,
     paddingHorizontal: 16,
     paddingVertical: 13,
-    color: "#fff",
+    color: "#102B1E",
     fontSize: 15,
   },
 });

@@ -28,23 +28,23 @@ const MainTabNavigator = () => {
       initialRouteName="Dashboard"
       screenOptions={({ route }) => ({
         headerStyle: {
-          backgroundColor: "#121619",
+          backgroundColor: "#FAF9F6",
           borderBottomWidth: 0,
           elevation: 0,
           shadowOpacity: 0,
         },
-        headerTintColor: "#fff",
+        headerTintColor: "#102B1E",
         headerTitleStyle: { fontWeight: "700", fontSize: 17 },
 
         tabBarStyle: {
-          backgroundColor: "#0d1114",
-          borderTopColor: "rgba(255, 255, 255, 0.1)",
+          backgroundColor: "#FFFFFF",
+          borderTopColor: "rgba(16, 43, 30, 0.1)",
           borderTopWidth: 1,
           height: 62,
           paddingBottom: 8,
         },
-        tabBarActiveTintColor: "#30b466",
-        tabBarInactiveTintColor: "#444",
+        tabBarActiveTintColor: "#0B2B1E",
+        tabBarInactiveTintColor: "#66736B",
         tabBarLabelStyle: { fontSize: 10, fontWeight: "600" },
 
         tabBarIcon: ({ focused, color, size }) => {

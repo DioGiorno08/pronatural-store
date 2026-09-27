@@ -11,6 +11,7 @@ import ForgotPasswordScreen from "../screens/ForgotPasswordScreen";
 
 // importamos el navegador lateral con menú de hamburguesa del panel administrativo
 import AdminDrawerNavigator from "./AdminDrawerNavigator";
+import { isAdministrativeUser } from "../utils/accessControl";
 
 // importamos el hook useAuth para controlar el acceso y sesión del usuario
 import useAuth from "../hooks/useAuth";
@@ -25,8 +26,8 @@ const AppNavigator = () => {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, backgroundColor: "#0a0d0f", justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color="#30b466" />
+      <View style={{ flex: 1, backgroundColor: "#FAF9F6", justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color="#0B2B1E" />
       </View>
     );
   }
@@ -53,7 +54,7 @@ const AppNavigator = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ animation: "fade" }}>
-        {user ? (
+        {isAdministrativeUser(user) ? (
           // Usuario autenticado: acceso exclusivo al portal administrativo con menú de hamburguesa
           <Stack.Screen name="AdminMain" component={AdminDrawerNavigator} options={{ headerShown: false }} />
         ) : (

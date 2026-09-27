@@ -15,7 +15,7 @@ const CustomCard = ({ title, subtitle, price, imageUrl, badgeText, badgeColor, o
           <Text style={styles.title} numberOfLines={1}>{title}</Text>
           {badgeText && (
             <View style={[styles.badge, { backgroundColor: badgeColor ? `${badgeColor}20` : "#30b46620" }]}>
-              <Text style={[styles.badgeText, { color: badgeColor || "#30b466" }]}>{badgeText}</Text>
+              <Text style={[styles.badgeText, { color: badgeColor || "#0B2B1E" }]}>{badgeText}</Text>
             </View>
           )}
         </View>
@@ -30,10 +30,10 @@ export default CustomCard;
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#121619",
+    backgroundColor: "#F3F1EB",
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderColor: "rgba(16, 43, 30, 0.1)",
     overflow: "hidden",
     marginBottom: 12,
   },
@@ -51,19 +51,19 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   title: {
-    color: "#fff",
+    color: "#102B1E",
     fontSize: 16,
     fontWeight: "bold",
     flex: 1,
   },
   subtitle: {
-    color: "#888",
+    color: "#66736B",
     fontSize: 13,
     marginTop: 2,
     marginBottom: 6,
   },
   price: {
-    color: "#4ade80",
+    color: "#208B51",
     fontSize: 16,
     fontWeight: "bold",
     marginTop: 4,

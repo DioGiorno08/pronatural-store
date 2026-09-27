@@ -4,21 +4,21 @@ import { StyleSheet } from "react-native";
 const globalStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0a0d0f",
+    backgroundColor: "#FAF9F6",
   },
   title: {
     fontSize: 22,
     fontWeight: "bold",
-    color: "#fff",
+    color: "#102B1E",
     marginVertical: 10,
   },
   card: {
-    backgroundColor: "#121619",
+    backgroundColor: "#F3F1EB",
     borderRadius: 12,
     padding: 15,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderColor: "rgba(16, 43, 30, 0.1)",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -26,26 +26,26 @@ const globalStyles = StyleSheet.create({
     elevation: 8,
   },
   button: {
-    backgroundColor: "#30b466",
+    backgroundColor: "#0B2B1E",
     padding: 15,
     borderRadius: 10,
     alignItems: "center",
     marginVertical: 10,
   },
   buttonText: {
-    color: "#0a110d",
+    color: "#FFFFFF",
     fontSize: 15,
     fontWeight: "bold",
   },
   input: {
-    backgroundColor: "#0d1114",
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.15)",
+    borderColor: "rgba(16, 43, 30, 0.15)",
     padding: 14,
     borderRadius: 10,
     marginBottom: 12,
     fontSize: 15,
-    color: "#fff",
+    color: "#102B1E",
   },
 });
 

@@ -7,7 +7,7 @@ const NotificationBanner = ({ message, type = "info", visible }) => {
   if (!visible || !message) return null;
 
   const config = {
-    success: { icon: "checkmark-circle",    color: "#30b466", bg: "rgba(48, 180, 102, 0.12)", border: "rgba(48, 180, 102, 0.3)" },
+    success: { icon: "checkmark-circle",    color: "#0B2B1E", bg: "rgba(11, 43, 30, 0.12)", border: "rgba(11, 43, 30, 0.3)" },
     error:   { icon: "alert-circle",        color: "#ef4444", bg: "rgba(239, 68, 68, 0.12)",  border: "rgba(239, 68, 68, 0.3)" },
     warning: { icon: "warning",             color: "#f59e0b", bg: "rgba(245, 158, 11, 0.12)", border: "rgba(245, 158, 11, 0.3)" },
     info:    { icon: "information-circle", color: "#3b82f6", bg: "rgba(59, 130, 246, 0.12)", border: "rgba(59, 130, 246, 0.3)" },
@@ -35,7 +35,7 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   text: {
-    color: "#fff",
+    color: "#102B1E",
     fontSize: 13,
     fontWeight: "500",
     flex: 1,

@@ -17,6 +17,8 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import useAuth from "../hooks/useAuth";
+import AnimatedEntrance from "../components/AnimatedEntrance";
+import AppIcon3D from "../components/AppIcon3D";
 
 // Importamos todas las 9 pantallas administrativas
 import AdminDashboardScreen from "../screens/AdminDashboardScreen";
@@ -29,16 +31,16 @@ import AdminReportsScreen from "../screens/AdminReportsScreen";
 import AdminSettingsScreen from "../screens/AdminSettingsScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 
-const logoProNatural = require("../../assets/logopronatural.png");
+const logoProNatural = require("../../assets/logopronatural-negro.png");
 
 const MENU_ITEMS = [
-  { id: "Dashboard",  label: "Panel Principal",        icon: "stats-chart-outline",  activeIcon: "stats-chart" },
+  { id: "Dashboard",  label: "Panel Principal",        icon: "grid-outline",         activeIcon: "grid" },
   { id: "Products",   label: "Catálogo e Inventario", icon: "cube-outline",         activeIcon: "cube" },
   { id: "Categories", label: "Categorías",             icon: "pricetags-outline",    activeIcon: "pricetags" },
-  { id: "Sales",      label: "Ventas y Pedidos",       icon: "receipt-outline",      activeIcon: "receipt" },
+  { id: "Sales",      label: "Ventas y Pedidos",       icon: "cart-outline",         activeIcon: "cart" },
   { id: "Customers",  label: "Clientes",               icon: "people-outline",       activeIcon: "people" },
   { id: "Sellers",    label: "Vendedores",             icon: "briefcase-outline",    activeIcon: "briefcase" },
-  { id: "Reports",    label: "Reportes",               icon: "document-text-outline",activeIcon: "document-text" },
+  { id: "Reports",    label: "Reportes",               icon: "bar-chart-outline",    activeIcon: "bar-chart" },
   { id: "Settings",   label: "Ajustes",                icon: "settings-outline",     activeIcon: "settings" },
   { id: "Profile",    label: "Mi Perfil",              icon: "person-circle-outline",activeIcon: "person-circle" },
 ];
@@ -213,6 +215,12 @@ const AdminDrawerNavigator = ({ navigation: rootNav }) => {
     .toUpperCase();
   const userRole = user?.role === "Employee" ? "Vendedor" : "Administrador";
   const isSubScreen = activeScreen !== "Dashboard";
+  const QUICK_NAV_ITEMS = [
+    { id: "Dashboard", label: "Inicio", icon: "grid-outline", activeIcon: "grid" },
+    { id: "Products", label: "Inventario", icon: "cube-outline", activeIcon: "cube" },
+    { id: "Sales", label: "Ventas", icon: "cart-outline", activeIcon: "cart" },
+    { id: "More", label: "Más", icon: "apps-outline", activeIcon: "apps" },
+  ];
 
   // Altura adaptativa de notch/barra de estado para cualquier celular
   const topInsetHeight = Math.max(
@@ -222,7 +230,7 @@ const AdminDrawerNavigator = ({ navigation: rootNav }) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#0a0d0f" translucent={true} />
+      <StatusBar barStyle="dark-content" backgroundColor="#FAF9F6" translucent={true} />
 
       {/* HEADER SUPERIOR CON BOTÓN REGRESAR (←) Y MENÚ DE HAMBURGUESA (☰) */}
       <View
@@ -243,19 +251,9 @@ const AdminDrawerNavigator = ({ navigation: rootNav }) => {
               activeOpacity={0.7}
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             >
-              <Ionicons name="arrow-back" size={22} color="#fff" />
+              <Ionicons name="arrow-back" size={22} color="#102B1E" />
             </TouchableOpacity>
           )}
-
-          {/* BOTÓN HAMBURGUESA (Siempre visible para abrir el drawer) */}
-          <TouchableOpacity
-            style={[styles.hamburgerBtn, isSubScreen && styles.hamburgerBtnCompact]}
-            onPress={openDrawer}
-            activeOpacity={0.7}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          >
-            <Ionicons name="menu" size={24} color="#30b466" />
-          </TouchableOpacity>
         </View>
 
         {/* TÍTULO DE LA PANTALLA ACTIVA */}
@@ -283,10 +281,41 @@ const AdminDrawerNavigator = ({ navigation: rootNav }) => {
       <View
         style={[
           styles.screenContent,
-          { paddingBottom: Math.max(insets.bottom, 6) },
         ]}
       >
-        {renderActiveScreen()}
+        <AnimatedEntrance key={activeScreen} style={{ flex: 1 }} distance={8} duration={220}>
+          {renderActiveScreen()}
+        </AnimatedEntrance>
+      </View>
+
+      <View style={[styles.bottomNav, { paddingBottom: Math.max(insets.bottom, 8) }]}>
+        {QUICK_NAV_ITEMS.map((item) => {
+          const selected = item.id === "More"
+            ? !["Dashboard", "Products", "Sales"].includes(activeScreen)
+            : activeScreen === item.id;
+          return (
+            <TouchableOpacity
+              key={item.id}
+              style={[styles.bottomNavItem, selected && styles.bottomNavItemActive]}
+              onPress={() => item.id === "More" ? openDrawer() : navigateTo(item.id)}
+              activeOpacity={0.75}
+              accessibilityRole="button"
+              accessibilityState={{ selected }}
+              accessibilityLabel={item.id === "More" ? "Abrir todos los módulos" : `Ir a ${item.label}`}
+            >
+              <AppIcon3D
+                name={selected ? item.activeIcon : item.icon}
+                size={31}
+                iconSize={17}
+                color={selected ? "#0B2B1E" : "#66736B"}
+                surface={selected ? "#E5EFE7" : "#FFFFFF"}
+                depth={selected ? "#B7CFBC" : "#E3E0D8"}
+                radius={11}
+              />
+              <Text style={[styles.bottomNavLabel, selected && styles.bottomNavLabelActive]}>{item.label}</Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       {/* MODAL NATIVO DEL DRAWER: COMPATIBILIDAD TOTAL ANDROID / IOS */}
@@ -322,18 +351,20 @@ const AdminDrawerNavigator = ({ navigation: rootNav }) => {
             {/* ENCABEZADO DEL DRAWER */}
             <View style={styles.drawerHeader}>
               <View style={styles.brandRow}>
+                <View style={{ backgroundColor: "#FFFFFF", borderRadius: 14, padding: 12 }}>
                 <Image
                   source={logoProNatural}
                   style={styles.logoImage}
                   resizeMode="contain"
                 />
+                </View>
                 <TouchableOpacity
                   style={styles.closeBtn}
                   onPress={() => closeDrawer()}
                   hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="close" size={22} color="#aaa" />
+                  <Ionicons name="close" size={22} color="#66736B" />
                 </TouchableOpacity>
               </View>
 
@@ -349,7 +380,7 @@ const AdminDrawerNavigator = ({ navigation: rootNav }) => {
                     {user?.email || "admin@pronatural.com"}
                   </Text>
                   <View style={styles.roleTag}>
-                    <Ionicons name="shield-checkmark" size={10} color="#30b466" />
+                    <Ionicons name="shield-checkmark" size={10} color="#0B2B1E" />
                     <Text style={styles.roleTagTxt}>{userRole.toUpperCase()}</Text>
                   </View>
                 </View>
@@ -383,10 +414,14 @@ const AdminDrawerNavigator = ({ navigation: rootNav }) => {
                         isActive && styles.menuIconWrapActive,
                       ]}
                     >
-                      <Ionicons
+                      <AppIcon3D
                         name={isActive ? item.activeIcon : item.icon}
-                        size={20}
-                        color={isActive ? "#30b466" : "#888"}
+                        size={25}
+                        iconSize={15}
+                        color={isActive ? "#0B2B1E" : "#66736B"}
+                        surface={isActive ? "#E5EFE7" : "#FFFFFF"}
+                        depth={isActive ? "#B7CFBC" : "#E3E0D8"}
+                        radius={9}
                       />
                     </View>
                     <Text
@@ -432,18 +467,18 @@ export default AdminDrawerNavigator;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0a0d0f",
+    backgroundColor: "#FAF9F6",
   },
 
   // Barra superior principal adaptativa
   topHeader: {
-    backgroundColor: "#0d1114",
+    backgroundColor: "#FFFFFF",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 14,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.08)",
+    borderBottomColor: "rgba(16, 43, 30, 0.08)",
   },
   headerLeft: {
     flexDirection: "row",
@@ -454,26 +489,11 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 10,
-    backgroundColor: "#161b1f",
+    backgroundColor: "#F5F3ED",
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.12)",
-  },
-  hamburgerBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    backgroundColor: "#161b1f",
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "rgba(48, 180, 102, 0.25)",
-  },
-  hamburgerBtnCompact: {
-    width: 36,
-    height: 36,
-    borderRadius: 9,
+    borderColor: "rgba(16, 43, 30, 0.12)",
   },
   titleWrap: {
     flex: 1,
@@ -487,10 +507,10 @@ const styles = StyleSheet.create({
     width: 7,
     height: 7,
     borderRadius: 3.5,
-    backgroundColor: "#30b466",
+    backgroundColor: "#E24B00",
   },
   headerTitle: {
-    color: "#fff",
+    color: "#102B1E",
     fontSize: 15,
     fontWeight: "bold",
     letterSpacing: 0.2,
@@ -504,21 +524,52 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: "rgba(48, 180, 102, 0.15)",
+    backgroundColor: "rgba(11, 43, 30, 0.15)",
     borderWidth: 1,
-    borderColor: "#30b466",
+    borderColor: "#0B2B1E",
     justifyContent: "center",
     alignItems: "center",
   },
   profileBadgeTxt: {
-    color: "#30b466",
+    color: "#0B2B1E",
     fontWeight: "bold",
     fontSize: 13,
   },
 
   screenContent: {
     flex: 1,
-    backgroundColor: "#0a0d0f",
+    backgroundColor: "#FAF9F6",
+  },
+  bottomNav: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    paddingTop: 8,
+    paddingHorizontal: 12,
+    backgroundColor: "#F3F1EB",
+    borderTopWidth: 1,
+    borderTopColor: "rgba(16, 43, 30, 0.07)",
+  },
+  bottomNavItem: {
+    minWidth: 64,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 3,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 14,
+  },
+  bottomNavItemActive: {
+    backgroundColor: "rgba(226, 75, 0, 0.08)",
+  },
+  bottomNavLabel: {
+    color: "#68736A",
+    fontSize: 11,
+    fontWeight: "500",
+  },
+  bottomNavLabelActive: {
+    color: "#B83C00",
+    fontWeight: "700",
   },
 
   // Raíz del modal que ocupa 100% de la pantalla nativa
@@ -527,16 +578,16 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0, 0, 0, 0.72)",
+    backgroundColor: "rgba(16, 43, 30, 0.34)",
   },
   drawerPanel: {
     position: "absolute",
     top: 0,
     bottom: 0,
     left: 0,
-    backgroundColor: "#0d1114",
+    backgroundColor: "#FFFFFF",
     borderRightWidth: 1,
-    borderRightColor: "rgba(255, 255, 255, 0.1)",
+    borderRightColor: "rgba(16, 43, 30, 0.1)",
     shadowColor: "#000",
     shadowOffset: { width: 4, height: 0 },
     shadowOpacity: 0.5,
@@ -549,7 +600,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingBottom: 14,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.06)",
+    borderBottomColor: "rgba(16, 43, 30, 0.06)",
   },
   brandRow: {
     flexDirection: "row",
@@ -565,43 +616,43 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    backgroundColor: "rgba(16, 43, 30, 0.06)",
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderColor: "rgba(16, 43, 30, 0.08)",
   },
   userInfoCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#121619",
+    backgroundColor: "#F3F1EB",
     borderRadius: 12,
     padding: 10,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderColor: "rgba(16, 43, 30, 0.08)",
   },
   drawerAvatar: {
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: "rgba(48, 180, 102, 0.15)",
+    backgroundColor: "rgba(11, 43, 30, 0.15)",
     borderWidth: 1.5,
-    borderColor: "#30b466",
+    borderColor: "#0B2B1E",
     justifyContent: "center",
     alignItems: "center",
   },
   drawerAvatarTxt: {
-    color: "#30b466",
+    color: "#0B2B1E",
     fontSize: 15,
     fontWeight: "bold",
   },
   drawerUserName: {
-    color: "#fff",
+    color: "#102B1E",
     fontSize: 13,
     fontWeight: "bold",
   },
   drawerUserEmail: {
-    color: "#777",
+    color: "#66736B",
     fontSize: 11,
     marginTop: 1,
   },
@@ -609,7 +660,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: "rgba(48, 180, 102, 0.1)",
+    backgroundColor: "rgba(11, 43, 30, 0.1)",
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 6,
@@ -617,7 +668,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   roleTagTxt: {
-    color: "#4ade80",
+    color: "#208B51",
     fontSize: 9,
     fontWeight: "bold",
     letterSpacing: 0.5,
@@ -629,7 +680,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   menuSectionTitle: {
-    color: "#555",
+    color: "#66736B",
     fontSize: 10,
     fontWeight: "700",
     letterSpacing: 1.2,
@@ -646,37 +697,37 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   menuItemActive: {
-    backgroundColor: "rgba(48, 180, 102, 0.12)",
+    backgroundColor: "rgba(11, 43, 30, 0.12)",
     borderWidth: 1,
-    borderColor: "rgba(48, 180, 102, 0.25)",
+    borderColor: "rgba(11, 43, 30, 0.25)",
   },
   menuIconWrap: {
     width: 32,
     height: 32,
     borderRadius: 8,
-    backgroundColor: "rgba(255, 255, 255, 0.03)",
+    backgroundColor: "rgba(16, 43, 30, 0.03)",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 10,
   },
   menuIconWrapActive: {
-    backgroundColor: "rgba(48, 180, 102, 0.2)",
+    backgroundColor: "rgba(11, 43, 30, 0.2)",
   },
   menuItemText: {
-    color: "#888",
+    color: "#66736B",
     fontSize: 13.5,
     fontWeight: "500",
     flex: 1,
   },
   menuItemTextActive: {
-    color: "#fff",
+    color: "#102B1E",
     fontWeight: "bold",
   },
   activeIndicatorBar: {
     width: 3.5,
     height: 16,
     borderRadius: 2,
-    backgroundColor: "#30b466",
+    backgroundColor: "#0B2B1E",
   },
 
   // Pie del drawer
@@ -684,7 +735,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: "rgba(255, 255, 255, 0.06)",
+    borderTopColor: "rgba(16, 43, 30, 0.06)",
   },
   logoutBtn: {
     flexDirection: "row",
@@ -704,7 +755,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   versionTxt: {
-    color: "#444",
+    color: "#66736B",
     textAlign: "center",
     fontSize: 10.5,
   },

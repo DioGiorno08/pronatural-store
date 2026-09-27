@@ -18,7 +18,7 @@ const CustomButton = ({ title, onPress, style, textStyle, loading, disabled, var
       activeOpacity={0.8}
     >
       {loading ? (
-        <ActivityIndicator color={isSecondary ? "#fff" : "#0a110d"} />
+        <ActivityIndicator color={isSecondary ? "#0B2B1E" : "#FFFFFF"} />
       ) : (
         <Text style={[styles.text, isSecondary ? styles.textSecondary : styles.textPrimary, textStyle]}>
           {title}
@@ -39,12 +39,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   buttonPrimary: {
-    backgroundColor: "#30b466",
+    backgroundColor: "#0B2B1E",
   },
   buttonSecondary: {
-    backgroundColor: "#121619",
+    backgroundColor: "#F3F1EB",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.15)",
+    borderColor: "rgba(16, 43, 30, 0.15)",
   },
   disabled: {
     opacity: 0.6,
@@ -54,9 +54,9 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   textPrimary: {
-    color: "#0a110d",
+    color: "#FFFFFF",
   },
   textSecondary: {
-    color: "#ccc",
+    color: "#102B1E",
   },
 });
