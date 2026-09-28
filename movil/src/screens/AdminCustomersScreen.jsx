@@ -13,8 +13,10 @@ import {
   TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import AnimatedEntrance from "../components/AnimatedEntrance";
 import { useFocusEffect } from "@react-navigation/native";
 import useAuth from "../hooks/useAuth";
+import { isValidEmail } from "../utils/formValidation";
 
 const CustomerDetailModal = ({ visible, customer, onClose }) => {
   if (!customer) return null;
@@ -29,7 +31,7 @@ const CustomerDetailModal = ({ visible, customer, onClose }) => {
           <View style={modalStyles.hdr}>
             <Text style={modalStyles.title}>Detalle del Cliente</Text>
             <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={24} color="#888" />
+              <Ionicons name="close" size={24} color="#66736B" />
             </TouchableOpacity>
           </View>
 
@@ -53,7 +55,7 @@ const CustomerDetailModal = ({ visible, customer, onClose }) => {
               },
             ].map(({ icon, label, val }) => (
               <View key={label} style={modalStyles.row}>
-                <Ionicons name={icon} size={18} color="#30b466" style={{ width: 28 }} />
+                <Ionicons name={icon} size={18} color="#0B2B1E" style={{ width: 28 }} />
                 <View>
                   <Text style={modalStyles.rowLabel}>{label}</Text>
                   <Text style={modalStyles.rowVal}>{val || "—"}</Text>
@@ -84,6 +86,10 @@ const NewCustomerModal = ({ visible, onClose, onCreated }) => {
     }
     if (!email.trim()) {
       Alert.alert("Campo requerido", "El correo electrónico es obligatorio.");
+      return;
+    }
+    if (!isValidEmail(email)) {
+      Alert.alert("Correo inválido", "Escribe un correo electrónico válido, por ejemplo nombre@dominio.com.");
       return;
     }
 
@@ -121,7 +127,7 @@ const NewCustomerModal = ({ visible, onClose, onCreated }) => {
           <View style={modalStyles.hdr}>
             <Text style={modalStyles.title}>Nuevo Cliente</Text>
             <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={24} color="#888" />
+              <Ionicons name="close" size={24} color="#66736B" />
             </TouchableOpacity>
           </View>
 
@@ -131,7 +137,7 @@ const NewCustomerModal = ({ visible, onClose, onCreated }) => {
               <TextInput
                 style={modalStyles.inp}
                 placeholder="Nombre"
-                placeholderTextColor="#444"
+                placeholderTextColor="#66736B"
                 value={name}
                 onChangeText={setName}
               />
@@ -142,7 +148,7 @@ const NewCustomerModal = ({ visible, onClose, onCreated }) => {
               <TextInput
                 style={modalStyles.inp}
                 placeholder="Apellido"
-                placeholderTextColor="#444"
+                placeholderTextColor="#66736B"
                 value={lastName}
                 onChangeText={setLastName}
               />
@@ -153,7 +159,7 @@ const NewCustomerModal = ({ visible, onClose, onCreated }) => {
               <TextInput
                 style={modalStyles.inp}
                 placeholder="cliente@ejemplo.com"
-                placeholderTextColor="#444"
+                placeholderTextColor="#66736B"
                 keyboardType="email-address"
                 autoCapitalize="none"
                 value={email}
@@ -166,7 +172,7 @@ const NewCustomerModal = ({ visible, onClose, onCreated }) => {
               <TextInput
                 style={modalStyles.inp}
                 placeholder="+503 7000-0000"
-                placeholderTextColor="#444"
+                placeholderTextColor="#66736B"
                 keyboardType="phone-pad"
                 value={phone}
                 onChangeText={setPhone}
@@ -183,7 +189,7 @@ const NewCustomerModal = ({ visible, onClose, onCreated }) => {
                 disabled={saving}
               >
                 {saving ? (
-                  <ActivityIndicator color="#0a110d" />
+                  <ActivityIndicator color="#FFFFFF" />
                 ) : (
                   <Text style={modalStyles.saveTxt}>Guardar Cliente</Text>
                 )}
@@ -226,12 +232,13 @@ const AdminCustomersScreen = () => {
     return fullName.includes(q) || (c.email || c.correo || "").toLowerCase().includes(q);
   });
 
-  const renderItem = ({ item }) => {
+  const renderItem = ({ item, index }) => {
     const name = `${item.nombre || item.name || "Cliente"} ${item.apellido || item.lastName || ""}`.trim();
     const email = item.email || item.correo || "";
     const initial = name.charAt(0).toUpperCase();
 
     return (
+      <AnimatedEntrance delay={index * 30} distance={5} duration={220}>
       <TouchableOpacity style={styles.card} onPress={() => setSelected(item)} activeOpacity={0.8}>
         <View style={styles.avatar}>
           <Text style={styles.avatarTxt}>{initial}</Text>
@@ -243,26 +250,27 @@ const AdminCustomersScreen = () => {
             <Text style={styles.phone}>{item.telefono || item.phone}</Text>
           ) : null}
         </View>
-        <Ionicons name="chevron-forward" size={18} color="#444" />
+        <Ionicons name="chevron-forward" size={18} color="#66736B" />
       </TouchableOpacity>
+      </AnimatedEntrance>
     );
   };
 
   if (loading) return (
-    <View style={{ flex: 1, backgroundColor: "#0a0d0f", justifyContent: "center", alignItems: "center" }}>
-      <ActivityIndicator size="large" color="#30b466" />
+    <View style={{ flex: 1, backgroundColor: "#FAF9F6", justifyContent: "center", alignItems: "center" }}>
+      <ActivityIndicator size="large" color="#0B2B1E" />
     </View>
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#0a0d0f" }}>
+    <View style={{ flex: 1, backgroundColor: "#FAF9F6" }}>
       <View style={styles.topBar}>
         <View style={styles.searchWrap}>
-          <Ionicons name="search" size={16} color="#555" />
+          <Ionicons name="search" size={16} color="#66736B" />
           <TextInput
             style={styles.searchInput}
             placeholder={`Buscar entre ${customers.length} clientes...`}
-            placeholderTextColor="#444"
+            placeholderTextColor="#66736B"
             value={search}
             onChangeText={setSearch}
           />
@@ -272,7 +280,7 @@ const AdminCustomersScreen = () => {
           onPress={() => setShowNew(true)}
           activeOpacity={0.85}
         >
-          <Ionicons name="add" size={20} color="#0a110d" />
+          <Ionicons name="add" size={20} color="#FFFFFF" />
           <Text style={styles.addBtnTxt}>Nuevo</Text>
         </TouchableOpacity>
       </View>
@@ -286,11 +294,11 @@ const AdminCustomersScreen = () => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={() => { setRefreshing(true); loadCustomers(); }}
-            tintColor="#30b466"
+            tintColor="#0B2B1E"
           />
         }
         ListEmptyComponent={
-          <Text style={{ color: "#555", textAlign: "center", marginTop: 60 }}>
+          <Text style={{ color: "#66736B", textAlign: "center", marginTop: 60 }}>
             {search ? "No se encontraron clientes coincidentes." : "Sin clientes registrados"}
           </Text>
         }
@@ -320,21 +328,21 @@ const styles = StyleSheet.create({
     padding: 15,
     gap: 10,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.05)",
+    borderBottomColor: "rgba(16, 43, 30, 0.05)",
   },
   searchWrap: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#121619",
+    backgroundColor: "#F3F1EB",
     borderRadius: 10,
     paddingHorizontal: 12,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderColor: "rgba(16, 43, 30, 0.1)",
   },
   searchInput: {
     flex: 1,
-    color: "#fff",
+    color: "#102B1E",
     paddingVertical: 10,
     paddingLeft: 8,
     fontSize: 14,
@@ -342,55 +350,55 @@ const styles = StyleSheet.create({
   addBtn: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#30b466",
+    backgroundColor: "#0B2B1E",
     paddingHorizontal: 14,
     paddingVertical: 11,
     borderRadius: 10,
     gap: 4,
   },
-  addBtnTxt: { color: "#0a110d", fontWeight: "bold", fontSize: 14 },
+  addBtnTxt: { color: "#FFFFFF", fontWeight: "bold", fontSize: 14 },
   card: {
-    backgroundColor: "#121619",
-    borderRadius: 12,
-    padding: 14,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    padding: 15,
     marginBottom: 10,
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderColor: "rgba(16, 43, 30, 0.1)",
   },
   avatar: {
     width: 46,
     height: 46,
     borderRadius: 23,
-    backgroundColor: "rgba(48, 180, 102, 0.12)",
+    backgroundColor: "rgba(11, 43, 30, 0.12)",
     borderWidth: 1,
-    borderColor: "#30b466",
+    borderColor: "#0B2B1E",
     justifyContent: "center",
     alignItems: "center",
   },
-  avatarTxt: { color: "#30b466", fontSize: 18, fontWeight: "bold" },
+  avatarTxt: { color: "#0B2B1E", fontSize: 18, fontWeight: "bold" },
   info: { flex: 1, marginLeft: 14 },
-  name: { color: "#fff", fontSize: 15, fontWeight: "600" },
-  email: { color: "#666", fontSize: 12, marginTop: 2 },
-  phone: { color: "#555", fontSize: 12, marginTop: 1 },
+  name: { color: "#102B1E", fontSize: 15, fontWeight: "600" },
+  email: { color: "#66736B", fontSize: 12, marginTop: 2 },
+  phone: { color: "#66736B", fontSize: 12, marginTop: 1 },
 });
 
 const modalStyles = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: "rgba(0, 0, 0, 0.8)", justifyContent: "flex-end" },
-  sheet: { backgroundColor: "#121619", borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: "85%" },
+  sheet: { backgroundColor: "#F3F1EB", borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: "85%" },
   hdr: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 },
-  title: { color: "#fff", fontSize: 18, fontWeight: "bold" },
+  title: { color: "#102B1E", fontSize: 18, fontWeight: "bold" },
   avatarWrap: { alignItems: "center", marginBottom: 24 },
-  avatar: { width: 72, height: 72, borderRadius: 36, backgroundColor: "rgba(48, 180, 102, 0.12)", borderWidth: 2, borderColor: "#30b466", justifyContent: "center", alignItems: "center", marginBottom: 10 },
-  avatarTxt: { color: "#30b466", fontSize: 28, fontWeight: "bold" },
-  clientName: { color: "#fff", fontSize: 20, fontWeight: "bold" },
-  row: { flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "rgba(255, 255, 255, 0.05)" },
-  rowLabel: { color: "#555", fontSize: 11, marginBottom: 2 },
-  rowVal: { color: "#fff", fontSize: 14 },
+  avatar: { width: 72, height: 72, borderRadius: 36, backgroundColor: "rgba(11, 43, 30, 0.12)", borderWidth: 2, borderColor: "#0B2B1E", justifyContent: "center", alignItems: "center", marginBottom: 10 },
+  avatarTxt: { color: "#0B2B1E", fontSize: 28, fontWeight: "bold" },
+  clientName: { color: "#102B1E", fontSize: 20, fontWeight: "bold" },
+  row: { flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "rgba(16, 43, 30, 0.05)" },
+  rowLabel: { color: "#66736B", fontSize: 11, marginBottom: 2 },
+  rowVal: { color: "#102B1E", fontSize: 14 },
   field: { marginBottom: 14 },
   lbl: {
-    color: "#666",
+    color: "#66736B",
     fontSize: 12,
     fontWeight: "600",
     textTransform: "uppercase",
@@ -398,30 +406,30 @@ const modalStyles = StyleSheet.create({
     marginBottom: 6,
   },
   inp: {
-    backgroundColor: "#0d1114",
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.15)",
+    borderColor: "rgba(16, 43, 30, 0.15)",
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 11,
-    color: "#fff",
+    color: "#102B1E",
     fontSize: 14,
   },
   btns: { flexDirection: "row", gap: 12, marginTop: 16 },
   cancelBtn: {
     flex: 1,
-    backgroundColor: "#1c2227",
+    backgroundColor: "#F3F1EB",
     paddingVertical: 13,
     borderRadius: 10,
     alignItems: "center",
   },
-  cancelTxt: { color: "#aaa", fontSize: 14, fontWeight: "600" },
+  cancelTxt: { color: "#66736B", fontSize: 14, fontWeight: "600" },
   saveBtn: {
     flex: 2,
-    backgroundColor: "#30b466",
+    backgroundColor: "#0B2B1E",
     paddingVertical: 13,
     borderRadius: 10,
     alignItems: "center",
   },
-  saveTxt: { color: "#0a110d", fontSize: 14, fontWeight: "bold" },
+  saveTxt: { color: "#FFFFFF", fontSize: 14, fontWeight: "bold" },
 });

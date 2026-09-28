@@ -13,8 +13,10 @@ import {
   RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import AnimatedEntrance from "../components/AnimatedEntrance";
 import { useFocusEffect } from "@react-navigation/native";
 import useAuth from "../hooks/useAuth";
+import { isValidEmail, parseNonNegativeInteger } from "../utils/formValidation";
 
 const SellerModal = ({ visible, seller, onClose, onSaved }) => {
   const { authFetch } = useAuth();
@@ -55,6 +57,17 @@ const SellerModal = ({ visible, seller, onClose, onSaved }) => {
       return;
     }
 
+    if (!isValidEmail(email)) {
+      Alert.alert("Correo inválido", "Escribe un correo electrónico válido, por ejemplo nombre@dominio.com.");
+      return;
+    }
+
+    const salaryAmount = parseNonNegativeInteger(salary);
+    if (salaryAmount === null) {
+      Alert.alert("Salario inválido", "El salario debe ser un número entero igual o mayor que cero.");
+      return;
+    }
+
     if (!isEdit && (!password || password.length < 6)) {
       Alert.alert(
         "Contraseña requerida",
@@ -71,7 +84,7 @@ const SellerModal = ({ visible, seller, onClose, onSaved }) => {
         email: email.toLowerCase().trim(),
         phone: phone.trim(),
         role: role,
-        salary: Number(salary) || 0,
+        salary: salaryAmount,
         ...(password.trim() ? { password: password.trim() } : {}),
       };
 
@@ -109,7 +122,7 @@ const SellerModal = ({ visible, seller, onClose, onSaved }) => {
               {isEdit ? "Editar Vendedor" : "Nuevo Vendedor"}
             </Text>
             <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Ionicons name="close" size={24} color="#888" />
+              <Ionicons name="close" size={24} color="#66736B" />
             </TouchableOpacity>
           </View>
 
@@ -119,7 +132,7 @@ const SellerModal = ({ visible, seller, onClose, onSaved }) => {
               <TextInput
                 style={modalStyles.inp}
                 placeholder="Nombre de pila"
-                placeholderTextColor="#555"
+                placeholderTextColor="#66736B"
                 value={name}
                 onChangeText={setName}
               />
@@ -130,7 +143,7 @@ const SellerModal = ({ visible, seller, onClose, onSaved }) => {
               <TextInput
                 style={modalStyles.inp}
                 placeholder="Apellido"
-                placeholderTextColor="#555"
+                placeholderTextColor="#66736B"
                 value={lastName}
                 onChangeText={setLastName}
               />
@@ -141,7 +154,7 @@ const SellerModal = ({ visible, seller, onClose, onSaved }) => {
               <TextInput
                 style={modalStyles.inp}
                 placeholder="vendedor@pronatural.com"
-                placeholderTextColor="#555"
+                placeholderTextColor="#66736B"
                 keyboardType="email-address"
                 autoCapitalize="none"
                 value={email}
@@ -154,7 +167,7 @@ const SellerModal = ({ visible, seller, onClose, onSaved }) => {
               <TextInput
                 style={modalStyles.inp}
                 placeholder="+503 7000-0000"
-                placeholderTextColor="#555"
+                placeholderTextColor="#66736B"
                 keyboardType="phone-pad"
                 value={phone}
                 onChangeText={setPhone}
@@ -168,7 +181,7 @@ const SellerModal = ({ visible, seller, onClose, onSaved }) => {
               <TextInput
                 style={modalStyles.inp}
                 placeholder={isEdit ? "Dejar en blanco para mantener" : "Mínimo 6 caracteres"}
-                placeholderTextColor="#555"
+                placeholderTextColor="#66736B"
                 secureTextEntry
                 value={password}
                 onChangeText={setPassword}
@@ -205,7 +218,7 @@ const SellerModal = ({ visible, seller, onClose, onSaved }) => {
               <TextInput
                 style={modalStyles.inp}
                 placeholder="400"
-                placeholderTextColor="#555"
+                placeholderTextColor="#66736B"
                 keyboardType="numeric"
                 value={salary}
                 onChangeText={setSalary}
@@ -219,7 +232,7 @@ const SellerModal = ({ visible, seller, onClose, onSaved }) => {
               activeOpacity={0.8}
             >
               {saving ? (
-                <ActivityIndicator color="#0a110d" size="small" />
+                <ActivityIndicator color="#FFFFFF" size="small" />
               ) : (
                 <Text style={modalStyles.saveBtnTxt}>
                   {isEdit ? "Guardar Cambios" : "Registrar Vendedor"}
@@ -303,11 +316,12 @@ const AdminSellersScreen = () => {
     );
   });
 
-  const renderSeller = ({ item }) => {
+  const renderSeller = ({ item, index }) => {
     const initials = (item.name[0] || "V") + (item.lastName[0] || "");
     const isAdmin = item.role === "Administrador" || item.role === "Admin";
 
     return (
+      <AnimatedEntrance delay={index * 30} distance={5} duration={220}>
       <View style={styles.card}>
         <View style={styles.cardTop}>
           <View style={styles.avatar}>
@@ -342,7 +356,7 @@ const AdminSellersScreen = () => {
         </View>
 
         <View style={styles.metaRow}>
-          <Ionicons name="call-outline" size={13} color="#666" />
+          <Ionicons name="call-outline" size={13} color="#66736B" />
           <Text style={styles.metaTxt}>{item.phone}</Text>
         </View>
 
@@ -355,7 +369,7 @@ const AdminSellersScreen = () => {
             }}
             activeOpacity={0.8}
           >
-            <Ionicons name="create-outline" size={14} color="#30b466" />
+            <Ionicons name="create-outline" size={14} color="#0B2B1E" />
             <Text style={styles.editBtnTxt}>Editar</Text>
           </TouchableOpacity>
 
@@ -369,6 +383,7 @@ const AdminSellersScreen = () => {
           </TouchableOpacity>
         </View>
       </View>
+      </AnimatedEntrance>
     );
   };
 
@@ -387,30 +402,30 @@ const AdminSellersScreen = () => {
           }}
           activeOpacity={0.8}
         >
-          <Ionicons name="person-add" size={16} color="#0a110d" />
+          <Ionicons name="person-add" size={16} color="#FFFFFF" />
           <Text style={styles.addBtnTxt}>Nuevo</Text>
         </TouchableOpacity>
       </View>
 
       <View style={styles.searchBar}>
-        <Ionicons name="search-outline" size={16} color="#666" />
+        <Ionicons name="search-outline" size={16} color="#66736B" />
         <TextInput
           style={styles.searchInput}
           placeholder="Buscar por nombre o correo..."
-          placeholderTextColor="#555"
+          placeholderTextColor="#66736B"
           value={search}
           onChangeText={setSearch}
         />
         {search.length > 0 && (
           <TouchableOpacity onPress={() => setSearch("")}>
-            <Ionicons name="close-circle" size={16} color="#666" />
+            <Ionicons name="close-circle" size={16} color="#66736B" />
           </TouchableOpacity>
         )}
       </View>
 
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color="#30b466" />
+          <ActivityIndicator size="large" color="#0B2B1E" />
         </View>
       ) : (
         <FlatList
@@ -425,12 +440,12 @@ const AdminSellersScreen = () => {
                 setRefreshing(true);
                 fetchSellers();
               }}
-              tintColor="#30b466"
+              tintColor="#0B2B1E"
             />
           }
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Ionicons name="people-outline" size={44} color="#333" />
+              <Ionicons name="people-outline" size={44} color="#66736B" />
               <Text style={styles.emptyTxt}>No hay vendedores registrados aún</Text>
             </View>
           }
@@ -450,7 +465,7 @@ const AdminSellersScreen = () => {
 export default AdminSellersScreen;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0a0d0f" },
+  container: { flex: 1, backgroundColor: "#FAF9F6" },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -459,85 +474,85 @@ const styles = StyleSheet.create({
     paddingTop: 14,
     paddingBottom: 10,
   },
-  title: { fontSize: 18, fontWeight: "bold", color: "#fff" },
-  subtitle: { fontSize: 11, color: "#666", marginTop: 1 },
+  title: { fontSize: 18, fontWeight: "bold", color: "#102B1E" },
+  subtitle: { fontSize: 11, color: "#66736B", marginTop: 1 },
   addBtn: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#30b466",
+    backgroundColor: "#0B2B1E",
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 8,
     gap: 6,
   },
-  addBtnTxt: { color: "#0a110d", fontWeight: "bold", fontSize: 13 },
+  addBtnTxt: { color: "#FFFFFF", fontWeight: "bold", fontSize: 13 },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#121619",
+    backgroundColor: "#F3F1EB",
     marginHorizontal: 16,
     marginVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderColor: "rgba(16, 43, 30, 0.08)",
     gap: 8,
   },
-  searchInput: { flex: 1, color: "#fff", height: 40, fontSize: 13 },
+  searchInput: { flex: 1, color: "#102B1E", height: 40, fontSize: 13 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
   list: { paddingHorizontal: 16, paddingBottom: 24 },
   card: {
-    backgroundColor: "#161b1e",
-    borderRadius: 12,
-    padding: 14,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    padding: 16,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
+    borderColor: "rgba(16, 43, 30, 0.06)",
   },
   cardTop: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
   avatar: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "rgba(48, 180, 102, 0.15)",
+    backgroundColor: "rgba(11, 43, 30, 0.15)",
     borderWidth: 1.5,
-    borderColor: "#30b466",
+    borderColor: "#0B2B1E",
     justifyContent: "center",
     alignItems: "center",
   },
-  avatarTxt: { color: "#30b466", fontWeight: "bold", fontSize: 15 },
-  name: { color: "#fff", fontSize: 15, fontWeight: "bold" },
-  email: { color: "#888", fontSize: 12, marginTop: 1 },
+  avatarTxt: { color: "#0B2B1E", fontWeight: "bold", fontSize: 15 },
+  name: { color: "#102B1E", fontSize: 15, fontWeight: "bold" },
+  email: { color: "#66736B", fontSize: 12, marginTop: 1 },
   roleBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
   roleBadgeAdmin: { backgroundColor: "rgba(239, 68, 68, 0.15)" },
-  roleBadgeSeller: { backgroundColor: "rgba(48, 180, 102, 0.15)" },
+  roleBadgeSeller: { backgroundColor: "rgba(11, 43, 30, 0.15)" },
   roleBadgeTxt: { fontSize: 10, fontWeight: "bold" },
   roleBadgeTxtAdmin: { color: "#ef4444" },
-  roleBadgeTxtSeller: { color: "#4ade80" },
-  salaryTxt: { color: "#aaa", fontSize: 11, fontWeight: "500" },
+  roleBadgeTxtSeller: { color: "#208B51" },
+  salaryTxt: { color: "#66736B", fontSize: 12, fontWeight: "500" },
   metaRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
     paddingTop: 6,
     borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.04)",
+    borderTopColor: "rgba(16, 43, 30, 0.04)",
     marginBottom: 10,
   },
-  metaTxt: { color: "#777", fontSize: 11 },
+  metaTxt: { color: "#66736B", fontSize: 11 },
   actionsRow: { flexDirection: "row", gap: 8, justifyContent: "flex-end" },
   editBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: "rgba(48, 180, 102, 0.12)",
+    backgroundColor: "rgba(11, 43, 30, 0.12)",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: "rgba(48, 180, 102, 0.25)",
+    borderColor: "rgba(11, 43, 30, 0.25)",
   },
-  editBtnTxt: { color: "#4ade80", fontSize: 12, fontWeight: "bold" },
+  editBtnTxt: { color: "#208B51", fontSize: 12, fontWeight: "bold" },
   deleteBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -551,7 +566,7 @@ const styles = StyleSheet.create({
   },
   deleteBtnTxt: { color: "#ef4444", fontSize: 12, fontWeight: "bold" },
   empty: { alignItems: "center", justifyContent: "center", paddingVertical: 60 },
-  emptyTxt: { color: "#555", marginTop: 10, fontSize: 13 },
+  emptyTxt: { color: "#66736B", marginTop: 10, fontSize: 13 },
 });
 
 const modalStyles = StyleSheet.create({
@@ -561,13 +576,13 @@ const modalStyles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   sheet: {
-    backgroundColor: "#161b1e",
+    backgroundColor: "#F5F3ED",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
     maxHeight: "85%",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderColor: "rgba(16, 43, 30, 0.08)",
   },
   hdr: {
     flexDirection: "row",
@@ -576,17 +591,17 @@ const modalStyles = StyleSheet.create({
     marginBottom: 16,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.06)",
+    borderBottomColor: "rgba(16, 43, 30, 0.06)",
   },
-  title: { color: "#fff", fontSize: 17, fontWeight: "bold" },
+  title: { color: "#102B1E", fontSize: 17, fontWeight: "bold" },
   field: { marginBottom: 12 },
-  lbl: { color: "#888", fontSize: 11, fontWeight: "bold", textTransform: "uppercase", marginBottom: 5 },
+  lbl: { color: "#66736B", fontSize: 11, fontWeight: "bold", textTransform: "uppercase", marginBottom: 5 },
   inp: {
-    backgroundColor: "#0d1114",
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
+    borderColor: "rgba(16, 43, 30, 0.1)",
     borderRadius: 8,
-    color: "#fff",
+    color: "#102B1E",
     paddingHorizontal: 12,
     height: 42,
     fontSize: 13,
@@ -597,23 +612,23 @@ const modalStyles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-    backgroundColor: "#0d1114",
+    borderColor: "rgba(16, 43, 30, 0.1)",
+    backgroundColor: "#FFFFFF",
     alignItems: "center",
   },
   roleOptActive: {
-    backgroundColor: "rgba(48, 180, 102, 0.15)",
-    borderColor: "#30b466",
+    backgroundColor: "rgba(11, 43, 30, 0.15)",
+    borderColor: "#0B2B1E",
   },
-  roleOptTxt: { color: "#777", fontSize: 13, fontWeight: "600" },
-  roleOptTxtActive: { color: "#4ade80", fontWeight: "bold" },
+  roleOptTxt: { color: "#66736B", fontSize: 13, fontWeight: "600" },
+  roleOptTxtActive: { color: "#208B51", fontWeight: "bold" },
   saveBtn: {
-    backgroundColor: "#30b466",
+    backgroundColor: "#0B2B1E",
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: "center",
     marginTop: 10,
     marginBottom: 18,
   },
-  saveBtnTxt: { color: "#0a110d", fontSize: 14, fontWeight: "bold" },
+  saveBtnTxt: { color: "#FFFFFF", fontSize: 14, fontWeight: "bold" },
 });

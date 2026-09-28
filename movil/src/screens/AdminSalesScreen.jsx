@@ -13,6 +13,7 @@ import {
   TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import AnimatedEntrance from "../components/AnimatedEntrance";
 import { useFocusEffect } from "@react-navigation/native";
 import useAuth from "../hooks/useAuth";
 
@@ -23,7 +24,7 @@ const STATUS_COLOR = {
   "En Proceso": "#3b82f6",
   "Enviado":    "#8b5cf6",
   "Entregado":  "#10b981",
-  "Completado": "#30b466",
+  "Completado": "#0B2B1E",
   "Cancelado":  "#ef4444",
 };
 
@@ -62,7 +63,7 @@ const SaleDetailModal = ({ visible, sale, onClose, onUpdated }) => {
   const idStr = (sale._id || "").slice(-6).toUpperCase();
   const fecha = new Date(sale.createdAt || sale.fechaVenta || Date.now())
     .toLocaleDateString("es-SV", { year: "numeric", month: "short", day: "numeric" });
-  const color = STATUS_COLOR[estado] || "#888";
+  const color = STATUS_COLOR[estado] || "#66736B";
 
   const orderItems = sale.products || sale.productos || [];
 
@@ -73,28 +74,28 @@ const SaleDetailModal = ({ visible, sale, onClose, onUpdated }) => {
           <View style={modalStyles.hdr}>
             <Text style={modalStyles.title}>Venta #{idStr}</Text>
             <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={24} color="#888" />
+              <Ionicons name="close" size={24} color="#66736B" />
             </TouchableOpacity>
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false}>
             <View style={modalStyles.infoRow}>
-              <Ionicons name="person" size={16} color="#888" />
+              <Ionicons name="person" size={16} color="#66736B" />
               <Text style={modalStyles.infoTxt}>
                 {sale.customerId?.nombre || sale.customerId?.name || sale.cliente?.nombre || "Cliente General (Mostrador)"}
               </Text>
             </View>
             <View style={modalStyles.infoRow}>
-              <Ionicons name="calendar" size={16} color="#888" />
+              <Ionicons name="calendar" size={16} color="#66736B" />
               <Text style={modalStyles.infoTxt}>{fecha}</Text>
             </View>
             <View style={modalStyles.infoRow}>
-              <Ionicons name="card" size={16} color="#888" />
+              <Ionicons name="card" size={16} color="#66736B" />
               <Text style={modalStyles.infoTxt}>Método: {sale.paymentMethod || "Efectivo"}</Text>
             </View>
             <View style={modalStyles.infoRow}>
-              <Ionicons name="cash" size={16} color="#30b466" />
-              <Text style={[modalStyles.infoTxt, { color: "#4ade80", fontWeight: "bold" }]}>
+              <Ionicons name="cash" size={16} color="#0B2B1E" />
+              <Text style={[modalStyles.infoTxt, { color: "#208B51", fontWeight: "bold" }]}>
                 Total: ${(sale.total || 0).toFixed(2)}
               </Text>
             </View>
@@ -136,13 +137,13 @@ const SaleDetailModal = ({ visible, sale, onClose, onUpdated }) => {
                   style={[
                     modalStyles.estadoBtn,
                     {
-                      borderColor: e === estado ? STATUS_COLOR[e] : "#333",
-                      backgroundColor: e === estado ? `${STATUS_COLOR[e]}20` : "#0d1114",
+                      borderColor: e === estado ? STATUS_COLOR[e] : "#D9DED8",
+                      backgroundColor: e === estado ? `${STATUS_COLOR[e]}20` : "#102B1E",
                     },
                   ]}
                   onPress={() => setEstado(e)}
                 >
-                  <Text style={[modalStyles.estadoTxt, { color: e === estado ? STATUS_COLOR[e] : "#888" }]}>{e}</Text>
+                  <Text style={[modalStyles.estadoTxt, { color: e === estado ? STATUS_COLOR[e] : "#66736B" }]}>{e}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -152,7 +153,7 @@ const SaleDetailModal = ({ visible, sale, onClose, onUpdated }) => {
               onPress={handleUpdate}
               disabled={saving}
             >
-              {saving ? <ActivityIndicator color="#fff" /> : <Text style={modalStyles.saveTxt}>Guardar Estado</Text>}
+              {saving ? <ActivityIndicator color="#FFFFFF" /> : <Text style={modalStyles.saveTxt}>Guardar Estado</Text>}
             </TouchableOpacity>
           </ScrollView>
         </View>
@@ -187,25 +188,44 @@ const NewSaleModal = ({ visible, onClose, onCreated }) => {
         authFetch("/products"),
         authFetch("/clientes"),
       ]);
-      setProducts(resProd.status === "fulfilled" ? (Array.isArray(resProd.value) ? resProd.value : (resProd.value.products || [])) : []);
-      setCustomers(resCust.status === "fulfilled" ? (Array.isArray(resCust.value) ? resCust.value : (resCust.value.clientes || [])) : []);
+      if (resProd.status === "rejected") throw resProd.reason;
+      const productData = resProd.value;
+      setProducts(Array.isArray(productData) ? productData : (Array.isArray(productData?.products) ? productData.products : Array.isArray(productData?.data) ? productData.data : []));
+      if (resCust.status === "rejected") {
+        setCustomers([]);
+        Alert.alert("Clientes no disponibles", "Puedes continuar con la venta de mostrador; revisa la conexión para elegir un cliente.");
+      } else {
+        const customerData = resCust.value;
+        setCustomers(Array.isArray(customerData) ? customerData : (Array.isArray(customerData?.clientes) ? customerData.clientes : Array.isArray(customerData?.data) ? customerData.data : []));
+      }
     } catch (e) {
-      console.warn("Error cargando productos para venta:", e.message);
+      setProducts([]);
+      setCustomers([]);
+      Alert.alert("No se cargaron los productos", e.message || "Revisa la conexión e inténtalo de nuevo.");
     }
   };
 
   const addToCart = (product) => {
     const pId = product._id || product.id;
-    const price = product.price || product.precio || 0;
+    const price = Number(product.price ?? product.precio);
+    const stock = Number(product.stock ?? 0);
+    if (!pId || !Number.isFinite(price) || price <= 0) {
+      Alert.alert("Producto inválido", "No se puede agregar un producto sin identificador y precio válido.");
+      return;
+    }
     const existing = cart.find(item => item.id === pId);
 
     if (existing) {
-      if (existing.qty >= (product.stock || 99)) {
+      if (existing.qty >= stock) {
         Alert.alert("Stock límite", "No hay más existencias disponibles de este producto.");
         return;
       }
       setCart(cart.map(item => item.id === pId ? { ...item, qty: item.qty + 1 } : item));
     } else {
+      if (!Number.isSafeInteger(stock) || stock < 1) {
+        Alert.alert("Sin existencias", "Este producto no tiene unidades disponibles para la venta.");
+        return;
+      }
       setCart([...cart, {
         id: pId,
         name: product.name || product.nombreProducto || "Producto",
@@ -229,6 +249,30 @@ const NewSaleModal = ({ visible, onClose, onCreated }) => {
   const handleSaveSale = async () => {
     if (cart.length === 0) {
       Alert.alert("Carrito vacío", "Selecciona al menos un producto para registrar la venta.");
+      return;
+    }
+
+    let latestProducts;
+    try {
+      const response = await authFetch("/products");
+      latestProducts = Array.isArray(response) ? response : response.products || response.data || [];
+    } catch (error) {
+      Alert.alert("No se pudo verificar el inventario", "Revisa la conexión e inténtalo de nuevo. No se registró la venta.");
+      return;
+    }
+
+    const unavailable = cart.find((item) => {
+      const latest = latestProducts.find((product) => (product._id || product.id) === item.id);
+      const stock = Number(latest?.stock ?? 0);
+      return !latest || !Number.isSafeInteger(stock) || stock < item.qty;
+    });
+    if (unavailable) {
+      Alert.alert("Inventario actualizado", "Las existencias cambiaron en otra sesión. Actualiza los productos y revisa las cantidades antes de guardar.");
+      const refreshed = latestProducts.map((product) => ({
+        ...product,
+        price: Number(product.price ?? product.precio ?? 0),
+      }));
+      setProducts(refreshed);
       return;
     }
 
@@ -270,7 +314,7 @@ const NewSaleModal = ({ visible, onClose, onCreated }) => {
           <View style={modalStyles.hdr}>
             <Text style={modalStyles.title}>Registrar Nueva Venta</Text>
             <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={24} color="#888" />
+              <Ionicons name="close" size={24} color="#66736B" />
             </TouchableOpacity>
           </View>
 
@@ -329,7 +373,7 @@ const NewSaleModal = ({ visible, onClose, onCreated }) => {
                           <Text style={newSaleStyles.cartBadgeTxt}>{inCart.qty}</Text>
                         </View>
                       ) : (
-                        <Ionicons name="add-circle" size={20} color="#30b466" />
+                        <Ionicons name="add-circle" size={20} color="#0B2B1E" />
                       )}
                     </View>
                   </TouchableOpacity>
@@ -340,7 +384,7 @@ const NewSaleModal = ({ visible, onClose, onCreated }) => {
             {/* Resumen del carrito */}
             <Text style={[modalStyles.sectionTitle, { marginTop: 18 }]}>Artículos a Facturar</Text>
             {cart.length === 0 ? (
-              <Text style={{ color: "#555", fontSize: 13, marginBottom: 16 }}>
+              <Text style={{ color: "#66736B", fontSize: 13, marginBottom: 16 }}>
                 Ningún producto seleccionado todavía.
               </Text>
             ) : (
@@ -349,11 +393,11 @@ const NewSaleModal = ({ visible, onClose, onCreated }) => {
                   <Text style={newSaleStyles.cartRowName} numberOfLines={1}>{item.name}</Text>
                   <View style={newSaleStyles.qtyControls}>
                     <TouchableOpacity onPress={() => removeFromCart(item.id)} style={newSaleStyles.qtyBtn}>
-                      <Ionicons name="remove" size={14} color="#fff" />
+                      <Ionicons name="remove" size={14} color="#102B1E" />
                     </TouchableOpacity>
                     <Text style={newSaleStyles.qtyTxt}>{item.qty}</Text>
                     <TouchableOpacity onPress={() => addToCart(item)} style={newSaleStyles.qtyBtn}>
-                      <Ionicons name="add" size={14} color="#fff" />
+                      <Ionicons name="add" size={14} color="#102B1E" />
                     </TouchableOpacity>
                   </View>
                   <Text style={newSaleStyles.cartRowPrice}>${(item.price * item.qty).toFixed(2)}</Text>
@@ -377,7 +421,7 @@ const NewSaleModal = ({ visible, onClose, onCreated }) => {
                   ]}
                   onPress={() => setPayMethod(m.key)}
                 >
-                  <Text style={[newSaleStyles.payBtnTxt, paymentMethod === m.key && { color: "#30b466" }]}>
+                  <Text style={[newSaleStyles.payBtnTxt, paymentMethod === m.key && { color: "#0B2B1E" }]}>
                     {m.label}
                   </Text>
                 </TouchableOpacity>
@@ -391,14 +435,14 @@ const NewSaleModal = ({ visible, onClose, onCreated }) => {
             </View>
 
             <TouchableOpacity
-              style={[modalStyles.saveBtn, { backgroundColor: "#30b466", opacity: saving ? 0.6 : 1 }]}
+              style={[modalStyles.saveBtn, { backgroundColor: "#0B2B1E", opacity: saving ? 0.6 : 1 }]}
               onPress={handleSaveSale}
               disabled={saving}
             >
               {saving ? (
-                <ActivityIndicator color="#0a110d" />
+                <ActivityIndicator color="#FFFFFF" />
               ) : (
-                <Text style={[modalStyles.saveTxt, { color: "#0a110d" }]}>Confirmar y Guardar Venta</Text>
+                <Text style={modalStyles.saveTxt}>Confirmar y Guardar Venta</Text>
               )}
             </TouchableOpacity>
           </ScrollView>
@@ -440,13 +484,14 @@ const AdminSalesScreen = () => {
     return id.includes(q) || clientName.includes(q) || status.includes(q);
   });
 
-  const renderItem = ({ item }) => {
+  const renderItem = ({ item, index }) => {
     const estado = item.estado || item.status || "Pendiente";
-    const color = STATUS_COLOR[estado] || "#888";
+    const color = STATUS_COLOR[estado] || "#66736B";
     const fecha = new Date(item.createdAt || item.fechaVenta || Date.now()).toLocaleDateString("es-SV");
     const id = (item._id || "").slice(-6).toUpperCase();
 
     return (
+      <AnimatedEntrance delay={index * 30} distance={5} duration={220}>
       <TouchableOpacity style={styles.card} onPress={() => setSelected(item)} activeOpacity={0.8}>
         <View style={styles.cardTop}>
           <Text style={styles.orderId}>#{id}</Text>
@@ -456,7 +501,7 @@ const AdminSalesScreen = () => {
         </View>
 
         <View style={styles.cardMid}>
-          <Ionicons name="person-outline" size={14} color="#666" />
+          <Ionicons name="person-outline" size={14} color="#66736B" />
           <Text style={styles.clienteTxt}>
             {item.customerId?.nombre || item.customerId?.name || item.cliente?.nombre || "Cliente General (Mostrador)"}
           </Text>
@@ -465,27 +510,28 @@ const AdminSalesScreen = () => {
 
         <View style={styles.cardBot}>
           <Text style={styles.total}>${(item.total || 0).toFixed(2)}</Text>
-          <Ionicons name="chevron-forward" size={18} color="#555" />
+          <Ionicons name="chevron-forward" size={18} color="#66736B" />
         </View>
       </TouchableOpacity>
+      </AnimatedEntrance>
     );
   };
 
   if (loading) return (
-    <View style={{ flex: 1, backgroundColor: "#0a0d0f", justifyContent: "center", alignItems: "center" }}>
-      <ActivityIndicator size="large" color="#30b466" />
+    <View style={{ flex: 1, backgroundColor: "#FAF9F6", justifyContent: "center", alignItems: "center" }}>
+      <ActivityIndicator size="large" color="#0B2B1E" />
     </View>
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#0a0d0f" }}>
+    <View style={{ flex: 1, backgroundColor: "#FAF9F6" }}>
       <View style={styles.topBar}>
         <View style={styles.searchWrap}>
-          <Ionicons name="search" size={16} color="#555" />
+          <Ionicons name="search" size={16} color="#66736B" />
           <TextInput
             style={styles.searchInput}
             placeholder={`Buscar entre ${sales.length} ventas...`}
-            placeholderTextColor="#444"
+            placeholderTextColor="#66736B"
             value={search}
             onChangeText={setSearch}
           />
@@ -495,7 +541,7 @@ const AdminSalesScreen = () => {
           onPress={() => setShowNew(true)}
           activeOpacity={0.85}
         >
-          <Ionicons name="add" size={20} color="#0a110d" />
+          <Ionicons name="add" size={20} color="#FFFFFF" />
           <Text style={styles.addBtnTxt}>Nueva</Text>
         </TouchableOpacity>
       </View>
@@ -509,11 +555,11 @@ const AdminSalesScreen = () => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={() => { setRefreshing(true); loadSales(); }}
-            tintColor="#30b466"
+            tintColor="#0B2B1E"
           />
         }
         ListEmptyComponent={
-          <Text style={{ color: "#555", textAlign: "center", marginTop: 60 }}>
+          <Text style={{ color: "#66736B", textAlign: "center", marginTop: 60 }}>
             {search ? "No hay ventas que coincidan con la búsqueda." : "Sin ventas registradas"}
           </Text>
         }
@@ -544,21 +590,21 @@ const styles = StyleSheet.create({
     padding: 15,
     gap: 10,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.05)",
+    borderBottomColor: "rgba(16, 43, 30, 0.05)",
   },
   searchWrap: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#121619",
+    backgroundColor: "#F3F1EB",
     borderRadius: 10,
     paddingHorizontal: 12,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderColor: "rgba(16, 43, 30, 0.1)",
   },
   searchInput: {
     flex: 1,
-    color: "#fff",
+    color: "#102B1E",
     paddingVertical: 10,
     paddingLeft: 8,
     fontSize: 14,
@@ -566,42 +612,42 @@ const styles = StyleSheet.create({
   addBtn: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#30b466",
+    backgroundColor: "#0B2B1E",
     paddingHorizontal: 14,
     paddingVertical: 11,
     borderRadius: 10,
     gap: 4,
   },
-  addBtnTxt: { color: "#0a110d", fontWeight: "bold", fontSize: 14 },
-  card: { backgroundColor: "#121619", borderRadius: 14, padding: 15, marginBottom: 10, borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.1)" },
+  addBtnTxt: { color: "#FFFFFF", fontWeight: "bold", fontSize: 14 },
+  card: { backgroundColor: "#FFFFFF", borderRadius: 18, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: "rgba(16, 43, 30, 0.08)" },
   cardTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
-  orderId: { color: "#fff", fontWeight: "bold", fontSize: 16, fontFamily: "monospace" },
+  orderId: { color: "#102B1E", fontWeight: "bold", fontSize: 16, fontFamily: "monospace" },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, borderWidth: 1 },
   badgeTxt: { fontSize: 12, fontWeight: "bold" },
   cardMid: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 10 },
-  clienteTxt: { color: "#aaa", fontSize: 13, flex: 1 },
-  fechaTxt: { color: "#555", fontSize: 12 },
-  cardBot: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderTopWidth: 1, borderTopColor: "rgba(255, 255, 255, 0.05)", paddingTop: 10 },
-  total: { color: "#4ade80", fontSize: 18, fontWeight: "bold" },
+  clienteTxt: { color: "#66736B", fontSize: 13, flex: 1 },
+  fechaTxt: { color: "#66736B", fontSize: 12 },
+  cardBot: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderTopWidth: 1, borderTopColor: "rgba(16, 43, 30, 0.05)", paddingTop: 10 },
+  total: { color: "#208B51", fontSize: 18, fontWeight: "bold" },
 });
 
 const modalStyles = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: "rgba(0, 0, 0, 0.8)", justifyContent: "flex-end" },
-  sheet: { backgroundColor: "#121619", borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: "90%" },
+  sheet: { backgroundColor: "#F3F1EB", borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: "90%" },
   hdr: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 },
-  title: { color: "#fff", fontSize: 18, fontWeight: "bold" },
-  infoRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: "rgba(255, 255, 255, 0.05)" },
-  infoTxt: { color: "#ccc", fontSize: 14 },
+  title: { color: "#102B1E", fontSize: 18, fontWeight: "bold" },
+  infoRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: "rgba(16, 43, 30, 0.05)" },
+  infoTxt: { color: "#102B1E", fontSize: 14 },
   section: { marginTop: 16 },
-  sectionTitle: { color: "#888", fontSize: 11, fontWeight: "600", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 },
+  sectionTitle: { color: "#66736B", fontSize: 11, fontWeight: "600", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 },
   prodRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 6 },
-  prodName: { color: "#ccc", fontSize: 13, flex: 1 },
-  prodQty: { color: "#4ade80", fontSize: 13, fontWeight: "bold" },
+  prodName: { color: "#102B1E", fontSize: 13, flex: 1 },
+  prodQty: { color: "#208B51", fontSize: 13, fontWeight: "bold" },
   estadosWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 20 },
   estadoBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: 1 },
   estadoTxt: { fontSize: 13, fontWeight: "600" },
   saveBtn: { paddingVertical: 14, borderRadius: 12, alignItems: "center", marginBottom: 8 },
-  saveTxt: { color: "#fff", fontSize: 15, fontWeight: "bold" },
+  saveTxt: { color: "#FFFFFF", fontSize: 15, fontWeight: "bold" },
 });
 
 const newSaleStyles = StyleSheet.create({
@@ -609,17 +655,17 @@ const newSaleStyles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: "#0d1114",
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderColor: "rgba(16, 43, 30, 0.1)",
     marginRight: 8,
   },
   custPillActive: {
-    borderColor: "#30b466",
-    backgroundColor: "rgba(48, 180, 102, 0.15)",
+    borderColor: "#0B2B1E",
+    backgroundColor: "rgba(11, 43, 30, 0.15)",
   },
-  custPillTxt: { color: "#888", fontSize: 12, fontWeight: "600" },
-  custPillTxtActive: { color: "#30b466" },
+  custPillTxt: { color: "#66736B", fontSize: 12, fontWeight: "600" },
+  custPillTxtActive: { color: "#0B2B1E" },
   prodGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -628,76 +674,76 @@ const newSaleStyles = StyleSheet.create({
   },
   prodCard: {
     width: "48%",
-    backgroundColor: "#0d1114",
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderColor: "rgba(16, 43, 30, 0.1)",
     borderRadius: 10,
     padding: 10,
   },
   prodCardActive: {
-    borderColor: "#30b466",
-    backgroundColor: "rgba(48, 180, 102, 0.06)",
+    borderColor: "#0B2B1E",
+    backgroundColor: "rgba(11, 43, 30, 0.06)",
   },
-  prodCardName: { color: "#fff", fontSize: 12, fontWeight: "600" },
+  prodCardName: { color: "#102B1E", fontSize: 12, fontWeight: "600" },
   prodCardBottom: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginTop: 6,
   },
-  prodCardPrice: { color: "#4ade80", fontSize: 13, fontWeight: "bold" },
+  prodCardPrice: { color: "#208B51", fontSize: 13, fontWeight: "bold" },
   cartBadge: {
-    backgroundColor: "#30b466",
+    backgroundColor: "#0B2B1E",
     borderRadius: 10,
     width: 22,
     height: 22,
     justifyContent: "center",
     alignItems: "center",
   },
-  cartBadgeTxt: { color: "#0a110d", fontSize: 11, fontWeight: "bold" },
+  cartBadgeTxt: { color: "#FFFFFF", fontSize: 11, fontWeight: "bold" },
   cartRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#0d1114",
+    backgroundColor: "#FFFFFF",
     padding: 10,
     borderRadius: 8,
     marginBottom: 6,
   },
-  cartRowName: { flex: 1, color: "#fff", fontSize: 13 },
+  cartRowName: { flex: 1, color: "#102B1E", fontSize: 13 },
   qtyControls: { flexDirection: "row", alignItems: "center", gap: 8, marginHorizontal: 12 },
   qtyBtn: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#EEF1F4",
     width: 24,
     height: 24,
     borderRadius: 6,
     justifyContent: "center",
     alignItems: "center",
   },
-  qtyTxt: { color: "#fff", fontWeight: "bold", fontSize: 13 },
-  cartRowPrice: { color: "#4ade80", fontWeight: "bold", fontSize: 13 },
+  qtyTxt: { color: "#102B1E", fontWeight: "bold", fontSize: 13 },
+  cartRowPrice: { color: "#208B51", fontWeight: "bold", fontSize: 13 },
   payBtn: {
     flex: 1,
     paddingVertical: 10,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderColor: "rgba(16, 43, 30, 0.1)",
     alignItems: "center",
-    backgroundColor: "#0d1114",
+    backgroundColor: "#FFFFFF",
   },
   payBtnActive: {
-    borderColor: "#30b466",
-    backgroundColor: "rgba(48, 180, 102, 0.12)",
+    borderColor: "#0B2B1E",
+    backgroundColor: "rgba(11, 43, 30, 0.12)",
   },
-  payBtnTxt: { color: "#888", fontSize: 12, fontWeight: "600" },
+  payBtnTxt: { color: "#66736B", fontSize: 12, fontWeight: "600" },
   totalBox: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingVertical: 12,
     borderTopWidth: 1,
-    borderTopColor: "rgba(255, 255, 255, 0.1)",
+    borderTopColor: "rgba(16, 43, 30, 0.1)",
     marginBottom: 14,
   },
-  totalLabel: { color: "#aaa", fontSize: 15, fontWeight: "600" },
-  totalAmount: { color: "#4ade80", fontSize: 22, fontWeight: "bold" },
+  totalLabel: { color: "#66736B", fontSize: 15, fontWeight: "600" },
+  totalAmount: { color: "#208B51", fontSize: 22, fontWeight: "bold" },
 });

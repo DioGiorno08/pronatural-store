@@ -30,15 +30,15 @@ const AdminReportsScreen = () => {
 
   const loadData = async () => {
     try {
-      const [resSales, resProducts, resSellers] = await Promise.allSettled([
+      const [resSales, resProducts, resSellers] = await Promise.all([
         authFetch("/sales"),
         authFetch("/products"),
-        authFetch("/empleados"),
+        authFetch("/employees"),
       ]);
 
-      setSales(resSales.status === "fulfilled" ? (Array.isArray(resSales.value) ? resSales.value : (resSales.value.sales || [])) : []);
-      setProducts(resProducts.status === "fulfilled" ? (Array.isArray(resProducts.value) ? resProducts.value : (resProducts.value.products || [])) : []);
-      setSellers(resSellers.status === "fulfilled" ? (Array.isArray(resSellers.value) ? resSellers.value : (resSellers.value.empleados || resSellers.value.data || [])) : []);
+      setSales(Array.isArray(resSales) ? resSales : (Array.isArray(resSales?.sales) ? resSales.sales : Array.isArray(resSales?.data) ? resSales.data : []));
+      setProducts(Array.isArray(resProducts) ? resProducts : (Array.isArray(resProducts?.products) ? resProducts.products : Array.isArray(resProducts?.data) ? resProducts.data : []));
+      setSellers(Array.isArray(resSellers) ? resSellers : (Array.isArray(resSellers?.employees) ? resSellers.employees : Array.isArray(resSellers?.empleados) ? resSellers.empleados : Array.isArray(resSellers?.data) ? resSellers.data : []));
     } catch (error) {
       Alert.alert("Error al cargar datos", error.message);
     } finally {
@@ -94,9 +94,9 @@ const AdminReportsScreen = () => {
         <head>
           <meta charset="utf-8" />
           <style>
-            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1e293b; padding: 20px; font-size: 13px; }
-            .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #30b466; padding-bottom: 15px; margin-bottom: 20px; }
-            .brand { font-size: 24px; font-weight: bold; color: #30b466; margin: 0; }
+            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #EEF1F4; padding: 20px; font-size: 13px; }
+            .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0B2B1E; padding-bottom: 15px; margin-bottom: 20px; }
+            .brand { font-size: 24px; font-weight: bold; color: #0B2B1E; margin: 0; }
             .subtitle { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
             .meta { text-align: right; font-size: 11px; color: #64748b; }
             .kpis { display: flex; gap: 15px; margin-bottom: 25px; }
@@ -193,9 +193,9 @@ const AdminReportsScreen = () => {
         <head>
           <meta charset="utf-8" />
           <style>
-            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1e293b; padding: 20px; font-size: 13px; }
-            .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #30b466; padding-bottom: 15px; margin-bottom: 20px; }
-            .brand { font-size: 24px; font-weight: bold; color: #30b466; margin: 0; }
+            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #EEF1F4; padding: 20px; font-size: 13px; }
+            .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0B2B1E; padding-bottom: 15px; margin-bottom: 20px; }
+            .brand { font-size: 24px; font-weight: bold; color: #0B2B1E; margin: 0; }
             .subtitle { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
             .meta { text-align: right; font-size: 11px; color: #64748b; }
             .kpis { display: flex; gap: 15px; margin-bottom: 25px; }
@@ -303,9 +303,9 @@ const AdminReportsScreen = () => {
         <head>
           <meta charset="utf-8" />
           <style>
-            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1e293b; padding: 20px; font-size: 12px; }
-            .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #30b466; padding-bottom: 15px; margin-bottom: 20px; }
-            .brand { font-size: 24px; font-weight: bold; color: #30b466; margin: 0; }
+            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #EEF1F4; padding: 20px; font-size: 12px; }
+            .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0B2B1E; padding-bottom: 15px; margin-bottom: 20px; }
+            .brand { font-size: 24px; font-weight: bold; color: #0B2B1E; margin: 0; }
             .subtitle { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
             .meta { text-align: right; font-size: 11px; color: #64748b; }
             .kpis { display: flex; gap: 15px; margin-bottom: 25px; }
@@ -394,8 +394,8 @@ const AdminReportsScreen = () => {
   };
 
   if (loading) return (
-    <View style={{ flex: 1, backgroundColor: "#0a0d0f", justifyContent: "center", alignItems: "center" }}>
-      <ActivityIndicator size="large" color="#30b466" />
+    <View style={{ flex: 1, backgroundColor: "#FAF9F6", justifyContent: "center", alignItems: "center" }}>
+      <ActivityIndicator size="large" color="#0B2B1E" />
     </View>
   );
 
@@ -403,16 +403,16 @@ const AdminReportsScreen = () => {
   const totalSalesAmount = filteredSales.reduce((acc, s) => acc + (s.total || 0), 0);
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: "#0a0d0f" }} contentContainerStyle={styles.scroll}>
+    <ScrollView style={{ flex: 1, backgroundColor: "#FAF9F6" }} contentContainerStyle={styles.scroll}>
       <Text style={styles.headerTitle}>Generación de Reportes PDF</Text>
       <Text style={styles.headerSubtitle}>
-        En esta pantalla podrás generar, imprimir y compartir reportes ejecutivos oficiales en formato PDF utilizando expo-print y expo-sharing.
+        Genera, imprime y comparte reportes de ventas, inventario y personal en formato PDF.
       </Text>
 
       <View style={styles.card}>
         <View style={styles.cardHeader}>
-          <View style={[styles.iconWrap, { backgroundColor: "rgba(48, 180, 102, 0.12)" }]}>
-            <Ionicons name="document-text" size={22} color="#30b466" />
+          <View style={[styles.iconWrap, { backgroundColor: "rgba(11, 43, 30, 0.12)" }]}>
+            <Ionicons name="document-text" size={22} color="#0B2B1E" />
           </View>
 
           <View style={{ flex: 1 }}>
@@ -446,7 +446,7 @@ const AdminReportsScreen = () => {
 
         <View style={styles.summaryBox}>
           <Text style={styles.summaryTxt}>
-            {filteredSales.length} ventas encontradas · <Text style={{ color: "#4ade80", fontWeight: "bold" }}>${totalSalesAmount.toFixed(2)} USD</Text>
+            {filteredSales.length} ventas encontradas · <Text style={{ color: "#208B51", fontWeight: "bold" }}>${totalSalesAmount.toFixed(2)} USD</Text>
           </Text>
         </View>
 
@@ -456,10 +456,10 @@ const AdminReportsScreen = () => {
           disabled={generating}
         >
           {generating ? (
-            <ActivityIndicator color="#0a110d" />
+            <ActivityIndicator color="#FFFFFF" />
           ) : (
             <>
-              <Ionicons name="download-outline" size={18} color="#0a110d" />
+              <Ionicons name="download-outline" size={18} color="#FFFFFF" />
               <Text style={styles.exportBtnTxt}>Exportar Reporte de Ventas (PDF)</Text>
             </>
           )}
@@ -484,16 +484,16 @@ const AdminReportsScreen = () => {
         </View>
 
         <TouchableOpacity
-          style={[styles.exportBtn, { backgroundColor: "#3b82f6" }, generating && { opacity: 0.6 }]}
+          style={[styles.exportBtn, generating && { opacity: 0.6 }]}
           onPress={() => handleExportPDF("INVENTORY")}
           disabled={generating}
         >
           {generating ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color="#FFFFFF" />
           ) : (
             <>
-              <Ionicons name="download-outline" size={18} color="#fff" />
-              <Text style={[styles.exportBtnTxt, { color: "#fff" }]}>Exportar Reporte de Inventario (PDF)</Text>
+              <Ionicons name="download-outline" size={18} color="#FFFFFF" />
+              <Text style={styles.exportBtnTxt}>Exportar Reporte de Inventario (PDF)</Text>
             </>
           )}
         </TouchableOpacity>
@@ -515,16 +515,16 @@ const AdminReportsScreen = () => {
         </View>
 
         <TouchableOpacity
-          style={[styles.exportBtn, { backgroundColor: "#8b5cf6" }, generating && { opacity: 0.6 }]}
+          style={[styles.exportBtn, generating && { opacity: 0.6 }]}
           onPress={() => handleExportPDF("SELLERS")}
           disabled={generating}
         >
           {generating ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color="#FFFFFF" />
           ) : (
             <>
-              <Ionicons name="download-outline" size={18} color="#fff" />
-              <Text style={[styles.exportBtnTxt, { color: "#fff" }]}>Exportar Directorio de Vendedores (PDF)</Text>
+              <Ionicons name="download-outline" size={18} color="#FFFFFF" />
+              <Text style={styles.exportBtnTxt}>Exportar Directorio de Vendedores (PDF)</Text>
             </>
           )}
         </TouchableOpacity>
@@ -541,23 +541,23 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   headerTitle: {
-    color: "#fff",
+    color: "#102B1E",
     fontSize: 22,
     fontWeight: "bold",
     marginBottom: 4,
   },
   headerSubtitle: {
-    color: "#aaa",
+    color: "#66736B",
     fontSize: 13,
     marginBottom: 20,
     lineHeight: 18,
   },
   card: {
-    backgroundColor: "#121619",
+    backgroundColor: "#F3F1EB",
     borderRadius: 16,
     padding: 18,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderColor: "rgba(16, 43, 30, 0.1)",
     marginBottom: 16,
   },
   cardHeader: {
@@ -574,17 +574,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   cardTitle: {
-    color: "#fff",
+    color: "#102B1E",
     fontSize: 16,
     fontWeight: "bold",
   },
   cardDesc: {
-    color: "#777",
+    color: "#66736B",
     fontSize: 12,
     marginTop: 2,
   },
   filterLabel: {
-    color: "#555",
+    color: "#66736B",
     fontSize: 11,
     fontWeight: "600",
     textTransform: "uppercase",
@@ -600,38 +600,38 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: "#0d1114",
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.15)",
+    borderColor: "rgba(16, 43, 30, 0.15)",
     alignItems: "center",
   },
   periodBtnActive: {
-    backgroundColor: "rgba(48, 180, 102, 0.15)",
-    borderColor: "#30b466",
+    backgroundColor: "rgba(11, 43, 30, 0.15)",
+    borderColor: "#0B2B1E",
   },
   periodTxt: {
-    color: "#888",
+    color: "#66736B",
     fontSize: 12,
   },
   periodTxtActive: {
-    color: "#30b466",
+    color: "#0B2B1E",
     fontWeight: "bold",
   },
   summaryBox: {
-    backgroundColor: "#0d1114",
+    backgroundColor: "#FFFFFF",
     padding: 12,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.05)",
+    borderColor: "rgba(16, 43, 30, 0.05)",
     marginBottom: 14,
   },
   summaryTxt: {
-    color: "#aaa",
+    color: "#66736B",
     fontSize: 13,
     textAlign: "center",
   },
   exportBtn: {
-    backgroundColor: "#30b466",
+    backgroundColor: "#0B2B1E",
     paddingVertical: 14,
     borderRadius: 12,
     flexDirection: "row",
@@ -640,7 +640,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   exportBtnTxt: {
-    color: "#0a110d",
+    color: "#FFFFFF",
+    flexShrink: 1,
+    textAlign: "center",
     fontSize: 14,
     fontWeight: "bold",
   },
