@@ -26,7 +26,7 @@ const Section = ({ title, children }) => {
 const InfoRow = ({ icon, label, value }) => {
   return (
     <View style={styles.infoRow}>
-      <Ionicons name={icon} size={18} color="#30b466" style={{ width: 28 }} />
+        <Ionicons name={icon} size={19} color="#0B2B1E" style={{ width: 28 }} />
       <View>
         <Text style={styles.infoLabel}>{label}</Text>
         <Text style={styles.infoValue}>{value || "—"}</Text>
@@ -37,7 +37,7 @@ const InfoRow = ({ icon, label, value }) => {
 
 const ProfileScreen = () => {
   // utilizamos el hook useAuth para obtener el usuario activo y las funciones de sesión
-  const { user, logout, authFetch, apiUrl } = useAuth();
+  const { user, logout, authFetch } = useAuth();
 
   const [showChangePwd, setShowChangePwd] = useState(false);
   const [currentPwd, setCurrentPwd]       = useState("");
@@ -108,14 +108,14 @@ const ProfileScreen = () => {
     .toUpperCase();
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: "#0a0d0f" }} contentContainerStyle={styles.scroll}>
+    <ScrollView style={{ flex: 1, backgroundColor: "#FAF9F6" }} contentContainerStyle={styles.scroll}>
       <View style={styles.header}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>{initials}</Text>
         </View>
         <Text style={styles.name}>{user?.name || "Administrador"}</Text>
         <View style={styles.roleBadge}>
-          <Ionicons name="shield-checkmark" size={12} color="#30b466" />
+          <Ionicons name="shield-checkmark" size={12} color="#0B2B1E" />
           <Text style={styles.roleText}>{roleLabel}</Text>
         </View>
       </View>
@@ -125,28 +125,16 @@ const ProfileScreen = () => {
       </Text>
 
       <Section title="Información de Cuenta">
-        <InfoRow icon="person"  label="Nombre completo"     value={user?.name} />
-        <InfoRow icon="mail"    label="Correo electrónico"  value={user?.email} />
-        <InfoRow icon="key"     label="Tipo de cuenta"      value={roleLabel} />
+        <InfoRow icon="person-outline" label="Nombre completo"    value={user?.name} />
+        <InfoRow icon="mail-outline"   label="Correo electrónico" value={user?.email} />
+        <InfoRow icon="key-outline"    label="Tipo de cuenta"     value={roleLabel} />
       </Section>
 
-      <Section title="Conexión del Sistema">
-        <InfoRow icon="server" label="Servidor Activo" value={apiUrl} />
-        <TouchableOpacity
-          style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 16, borderTopWidth: 1, borderTopColor: "rgba(255, 255, 255, 0.05)" }}
-          onPress={() => navigation?.navigate && navigation.navigate("Settings")}
-          activeOpacity={0.7}
-        >
-          <Text style={{ color: "#30b466", fontSize: 13, fontWeight: "600" }}>Cambiar o Probar Servidor en Ajustes</Text>
-          <Ionicons name="chevron-forward" size={16} color="#30b466" />
-        </TouchableOpacity>
-      </Section>
-
-      <Section title="Seguridad">
+<Section title="Seguridad">
         <TouchableOpacity style={styles.toggleBtn} onPress={() => setShowChangePwd(v => !v)}>
-          <Ionicons name="lock-closed-outline" size={18} color="#30b466" />
+          <Ionicons name="lock-closed-outline" size={18} color="#0B2B1E" />
           <Text style={styles.toggleTxt}>Cambiar Contraseña</Text>
-          <Ionicons name={showChangePwd ? "chevron-up" : "chevron-down"} size={16} color="#555" />
+          <Ionicons name={showChangePwd ? "chevron-up" : "chevron-down"} size={16} color="#66736B" />
         </TouchableOpacity>
 
         {showChangePwd && (
@@ -161,7 +149,7 @@ const ProfileScreen = () => {
                 <TextInput
                   style={styles.pwdInput}
                   placeholder="••••••••"
-                  placeholderTextColor="#444"
+                  placeholderTextColor="#66736B"
                   secureTextEntry
                   value={val}
                   onChangeText={setter}
@@ -175,7 +163,7 @@ const ProfileScreen = () => {
               disabled={savingPwd}
             >
               {savingPwd ? (
-                <ActivityIndicator color="#0a110d" />
+                <ActivityIndicator color="#FFFFFF" />
               ) : (
                 <Text style={styles.saveBtnTxt}>Actualizar Contraseña</Text>
               )}
@@ -199,32 +187,32 @@ export default ProfileScreen;
 const styles = StyleSheet.create({
   scroll: { padding: 20, paddingBottom: 40 },
   header:     { alignItems: "center", paddingVertical: 20 },
-  avatar:     { width: 90, height: 90, borderRadius: 45, backgroundColor: "rgba(48, 180, 102, 0.12)", borderWidth: 2, borderColor: "#30b466", justifyContent: "center", alignItems: "center", marginBottom: 14 },
-  avatarText: { color: "#30b466", fontSize: 32, fontWeight: "bold" },
-  name:       { color: "#fff", fontSize: 22, fontWeight: "bold" },
-  roleBadge:  { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: "rgba(48, 180, 102, 0.15)", borderWidth: 1, borderColor: "rgba(48, 180, 102, 0.4)", paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20, marginTop: 8 },
-  roleText:   { color: "#4ade80", fontSize: 13, fontWeight: "600" },
-  description: { color: "#aaa", fontSize: 13, textAlign: "center", marginBottom: 20, lineHeight: 18 },
+  avatar:     { width: 90, height: 90, borderRadius: 45, backgroundColor: "rgba(11, 43, 30, 0.12)", borderWidth: 2, borderColor: "#0B2B1E", justifyContent: "center", alignItems: "center", marginBottom: 14 },
+  avatarText: { color: "#0B2B1E", fontSize: 32, fontWeight: "bold" },
+  name:       { color: "#102B1E", fontSize: 22, fontWeight: "bold" },
+  roleBadge:  { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: "rgba(11, 43, 30, 0.15)", borderWidth: 1, borderColor: "rgba(11, 43, 30, 0.4)", paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20, marginTop: 8 },
+  roleText:   { color: "#208B51", fontSize: 13, fontWeight: "600" },
+  description: { color: "#66736B", fontSize: 14, textAlign: "center", marginBottom: 22, lineHeight: 21 },
 
   section:      { marginBottom: 20 },
-  sectionTitle: { color: "#555", fontSize: 11, fontWeight: "600", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 },
-  sectionCard:  { backgroundColor: "#121619", borderRadius: 14, borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.1)", overflow: "hidden" },
+  sectionTitle: { color: "#66736B", fontSize: 11, fontWeight: "600", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 },
+  sectionCard:  { backgroundColor: "#F3F1EB", borderRadius: 14, borderWidth: 1, borderColor: "rgba(16, 43, 30, 0.1)", overflow: "hidden" },
 
-  infoRow:   { flexDirection: "row", alignItems: "center", gap: 12, padding: 16, borderBottomWidth: 1, borderBottomColor: "rgba(255, 255, 255, 0.05)" },
-  infoLabel: { color: "#555", fontSize: 11, marginBottom: 2 },
-  infoValue: { color: "#fff", fontSize: 15, fontWeight: "500" },
+  infoRow:   { flexDirection: "row", alignItems: "center", gap: 12, padding: 16, borderBottomWidth: 1, borderBottomColor: "rgba(16, 43, 30, 0.05)" },
+  infoLabel: { color: "#66736B", fontSize: 11, marginBottom: 2 },
+  infoValue: { color: "#102B1E", fontSize: 15, fontWeight: "500" },
 
   toggleBtn: { flexDirection: "row", alignItems: "center", gap: 10, padding: 16 },
-  toggleTxt: { color: "#fff", fontSize: 15, fontWeight: "500", flex: 1 },
+  toggleTxt: { color: "#102B1E", fontSize: 15, fontWeight: "500", flex: 1 },
 
   pwdForm:  { padding: 16, paddingTop: 0, gap: 8 },
-  pwdLabel: { color: "#555", fontSize: 11, fontWeight: "600", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6, marginTop: 10 },
-  pwdInput: { backgroundColor: "#0d1114", borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.15)", borderRadius: 10, paddingHorizontal: 14, paddingVertical: 11, color: "#fff", fontSize: 14 },
-  saveBtn:  { backgroundColor: "#30b466", paddingVertical: 13, borderRadius: 10, alignItems: "center", marginTop: 14 },
-  saveBtnTxt: { color: "#0a110d", fontSize: 14, fontWeight: "bold" },
+  pwdLabel: { color: "#66736B", fontSize: 11, fontWeight: "600", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6, marginTop: 10 },
+  pwdInput: { backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "rgba(16, 43, 30, 0.15)", borderRadius: 10, paddingHorizontal: 14, paddingVertical: 11, color: "#102B1E", fontSize: 14 },
+  saveBtn:  { backgroundColor: "#0B2B1E", paddingVertical: 13, borderRadius: 10, alignItems: "center", marginTop: 14 },
+  saveBtnTxt: { color: "#FFFFFF", fontSize: 14, fontWeight: "bold" },
 
   logoutBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, backgroundColor: "rgba(239, 68, 68, 0.08)", borderWidth: 1, borderColor: "rgba(239, 68, 68, 0.2)", borderRadius: 14, padding: 16, marginBottom: 20 },
   logoutTxt: { color: "#ef4444", fontSize: 15, fontWeight: "bold" },
 
-  version: { color: "#333", textAlign: "center", fontSize: 12 },
+  version: { color: "#66736B", textAlign: "center", fontSize: 12 },
 });

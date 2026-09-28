@@ -5,7 +5,7 @@ import { View, Text, StyleSheet, ActivityIndicator, Image, Animated } from "reac
 import useAuth from "../hooks/useAuth";
 
 // importamos la imagen del logo transparente ProNatural
-const logoProNatural = require("../../assets/logopronatural.png");
+const logoProNatural = require("../../assets/logopronatural-negro.png");
 
 const SplashScreenCustom = ({ navigation, onFinish }) => {
   const { user } = useAuth();
@@ -55,11 +55,13 @@ const SplashScreenCustom = ({ navigation, onFinish }) => {
           },
         ]}
       >
-        <Image source={logoProNatural} style={styles.logoImage} resizeMode="contain" />
+        <View style={{ backgroundColor: "#FAF9F6", borderRadius: 18, padding: 16 }}>
+          <Image source={logoProNatural} style={styles.logoImage} resizeMode="contain" />
+        </View>
 
         <Text style={styles.tagline}>PORTAL ADMINISTRATIVO</Text>
 
-        <ActivityIndicator size="large" color="#30b466" style={{ marginTop: 36 }} />
+        <ActivityIndicator size="large" color="#0B2B1E" style={{ marginTop: 36 }} />
       </Animated.View>
 
       <Text style={styles.footerText}>ProNatural Store © 2025</Text>
@@ -72,7 +74,7 @@ export default SplashScreenCustom;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0a0d0f",
+    backgroundColor: "#FAF9F6",
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
@@ -85,7 +87,7 @@ const styles = StyleSheet.create({
     width: 320,
     height: 320,
     borderRadius: 160,
-    backgroundColor: "rgba(48, 180, 102, 0.05)",
+    backgroundColor: "rgba(11, 43, 30, 0.05)",
   },
   bgGlow2: {
     position: "absolute",
@@ -108,7 +110,7 @@ const styles = StyleSheet.create({
   },
 
   tagline: {
-    color: "#4ade80",
+    color: "#208B51",
     fontSize: 11,
     fontWeight: "bold",
     letterSpacing: 3.5,

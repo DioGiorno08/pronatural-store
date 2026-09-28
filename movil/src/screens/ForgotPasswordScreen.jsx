@@ -134,7 +134,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
         <TextInput
           style={styles.input}
           placeholder="admin@pronatural.com"
-          placeholderTextColor="#444"
+          placeholderTextColor="#66736B"
           keyboardType="email-address"
           autoCapitalize="none"
           value={email}
@@ -146,7 +146,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
           disabled={loading}
         >
           {loading ? (
-            <ActivityIndicator color="#0a110d" />
+            <ActivityIndicator color="#FFFFFF" />
           ) : (
             <Text style={styles.btnTxt}>Enviar Código de Verificación</Text>
           )}
@@ -157,13 +157,13 @@ const ForgotPasswordScreen = ({ navigation }) => {
     if (step === 2) return (
       <>
         <Text style={styles.stepHint}>
-          Ingresa el código que enviamos a <Text style={{ color: "#30b466" }}>{email}</Text>
+          Ingresa el código que enviamos a <Text style={{ color: "#0B2B1E" }}>{email}</Text>
         </Text>
         <Text style={styles.label}>Código de 6 dígitos</Text>
         <TextInput
           style={[styles.input, { letterSpacing: 8, textAlign: "center", fontSize: 22 }]}
           placeholder="000000"
-          placeholderTextColor="#444"
+          placeholderTextColor="#66736B"
           keyboardType="number-pad"
           maxLength={6}
           value={code}
@@ -175,7 +175,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
           disabled={loading}
         >
           {loading ? (
-            <ActivityIndicator color="#0a110d" />
+            <ActivityIndicator color="#FFFFFF" />
           ) : (
             <Text style={styles.btnTxt}>Verificar Código</Text>
           )}
@@ -196,13 +196,13 @@ const ForgotPasswordScreen = ({ navigation }) => {
           <TextInput
             style={[styles.input, { flex: 1, marginBottom: 0 }]}
             placeholder="••••••••"
-            placeholderTextColor="#444"
+            placeholderTextColor="#66736B"
             secureTextEntry={!showPass}
             value={newPass}
             onChangeText={setNewPass}
           />
           <TouchableOpacity style={styles.eyeBtn} onPress={() => setShowPass(v => !v)}>
-            <Ionicons name={showPass ? "eye-off" : "eye"} size={20} color="#555" />
+            <Ionicons name={showPass ? "eye-off" : "eye"} size={20} color="#66736B" />
           </TouchableOpacity>
         </View>
 
@@ -210,7 +210,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
         <TextInput
           style={styles.input}
           placeholder="••••••••"
-          placeholderTextColor="#444"
+          placeholderTextColor="#66736B"
           secureTextEntry={!showPass}
           value={confirmPass}
           onChangeText={setConfirmPass}
@@ -221,7 +221,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
           disabled={loading}
         >
           {loading ? (
-            <ActivityIndicator color="#0a110d" />
+            <ActivityIndicator color="#FFFFFF" />
           ) : (
             <Text style={styles.btnTxt}>Guardar Nueva Contraseña</Text>
           )}
@@ -231,22 +231,22 @@ const ForgotPasswordScreen = ({ navigation }) => {
   };
 
   const stepLabel = ["Recuperar Cuenta", "Verificar Código", "Nueva Contraseña"][step - 1];
-  const stepColor = ["#f59e0b", "#3b82f6", "#30b466"][step - 1];
+  const stepColor = ["#f59e0b", "#3b82f6", "#0B2B1E"][step - 1];
 
   return (
     <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <TouchableOpacity style={styles.back} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={22} color="#fff" />
+          <Ionicons name="arrow-back" size={22} color="#102B1E" />
         </TouchableOpacity>
 
         <View style={styles.stepsRow}>
           {[1, 2, 3].map(n => (
             <View key={n} style={[styles.stepDot, { backgroundColor: n <= step ? stepColor : "#222" }]}>
               {n < step ? (
-                <Ionicons name="checkmark" size={12} color="#fff" />
+                <Ionicons name="checkmark" size={12} color="#102B1E" />
               ) : (
-                <Text style={{ color: n <= step ? "#fff" : "#555", fontSize: 12, fontWeight: "bold" }}>{n}</Text>
+                <Text style={{ color: n <= step ? "#102B1E" : "#66736B", fontSize: 12, fontWeight: "bold" }}>{n}</Text>
               )}
             </View>
           ))}
@@ -274,7 +274,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
 export default ForgotPasswordScreen;
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#0a0d0f" },
+  screen: { flex: 1, backgroundColor: "#FAF9F6" },
   scroll: { flexGrow: 1, padding: 24, paddingTop: 60 },
   back:   { position: "absolute", top: 52, left: 24, zIndex: 10 },
 
@@ -282,21 +282,21 @@ const styles = StyleSheet.create({
   stepDot:  { width: 28, height: 28, borderRadius: 14, justifyContent: "center", alignItems: "center", zIndex: 1, marginHorizontal: 20 },
   stepLine: { position: "absolute", height: 2, width: "28%", top: 13, left: "18%" },
 
-  logoCircle: { width: 72, height: 72, borderRadius: 20, backgroundColor: "rgba(48, 180, 102, 0.1)", borderWidth: 1.5, borderColor: "rgba(48, 180, 102, 0.3)", justifyContent: "center", alignItems: "center", alignSelf: "center", marginBottom: 16 },
-  title:      { color: "#fff", fontSize: 22, fontWeight: "bold", textAlign: "center", marginBottom: 8 },
-  description: { color: "#aaa", fontSize: 13, textAlign: "center", marginBottom: 24, lineHeight: 18 },
+  logoCircle: { width: 72, height: 72, borderRadius: 20, backgroundColor: "rgba(11, 43, 30, 0.1)", borderWidth: 1.5, borderColor: "rgba(11, 43, 30, 0.3)", justifyContent: "center", alignItems: "center", alignSelf: "center", marginBottom: 16 },
+  title:      { color: "#102B1E", fontSize: 22, fontWeight: "bold", textAlign: "center", marginBottom: 8 },
+  description: { color: "#66736B", fontSize: 14, textAlign: "center", marginBottom: 24, lineHeight: 20 },
 
-  card:     { backgroundColor: "#121619", borderRadius: 20, padding: 24, borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.1)" },
-  stepHint: { color: "#888", fontSize: 14, lineHeight: 22, marginBottom: 24 },
-  label:    { color: "#555", fontSize: 11, fontWeight: "600", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 },
-  input:    { backgroundColor: "#0d1114", borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.15)", borderRadius: 10, paddingHorizontal: 16, paddingVertical: 13, color: "#fff", fontSize: 15, marginBottom: 18 },
+  card:     { backgroundColor: "#F3F1EB", borderRadius: 20, padding: 24, borderWidth: 1, borderColor: "rgba(16, 43, 30, 0.1)" },
+  stepHint: { color: "#66736B", fontSize: 14, lineHeight: 22, marginBottom: 24 },
+  label:    { color: "#66736B", fontSize: 11, fontWeight: "600", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 },
+  input:    { backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "rgba(16, 43, 30, 0.15)", borderRadius: 10, paddingHorizontal: 16, paddingVertical: 13, color: "#102B1E", fontSize: 15, marginBottom: 18 },
 
   passRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 0 },
-  eyeBtn:  { width: 48, height: 48, backgroundColor: "#0d1114", borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.15)", borderRadius: 10, justifyContent: "center", alignItems: "center" },
+  eyeBtn:  { width: 48, height: 48, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "rgba(16, 43, 30, 0.15)", borderRadius: 10, justifyContent: "center", alignItems: "center" },
 
-  btn:    { backgroundColor: "#30b466", paddingVertical: 15, borderRadius: 12, alignItems: "center", marginTop: 8 },
-  btnTxt: { color: "#0a110d", fontSize: 15, fontWeight: "bold" },
+  btn:    { backgroundColor: "#0B2B1E", paddingVertical: 15, borderRadius: 12, alignItems: "center", marginTop: 8 },
+  btnTxt: { color: "#FFFFFF", fontSize: 15, fontWeight: "bold" },
 
   link:    { alignItems: "center", marginTop: 16 },
-  linkTxt: { color: "#30b466", fontSize: 14 },
+  linkTxt: { color: "#0B2B1E", fontSize: 14 },
 });

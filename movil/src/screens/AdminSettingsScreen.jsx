@@ -1,456 +1,490 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
-  View,
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  Alert,
-  ActivityIndicator,
-  Modal,
+  View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import useAuth from "../hooks/useAuth";
-import {
-  DEFAULT_CLOUD_URL,
-  DEFAULT_LOCAL_URL,
-  getApiBaseUrl,
-  testApiConnection,
-} from "../config/apiConfig";
+import { isValidEmail, normalizeApiUrl } from "../utils/formValidation";
+
+const TABS = [
+  { id: "profile", label: "Perfil" },
+  { id: "store", label: "Tienda" },
+  { id: "security", label: "Seguridad" },
+  { id: "notifications", label: "Notificaciones" },
+];
+
+const WEEK_DAYS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+const DEFAULT_CONFIG = {
+  storeName: "Pro Natural",
+  ruc: "",
+  email: "info@pronatural.com",
+  phone: "+503 2222-2222",
+  address: "San Salvador, El Salvador",
+  website: "https://pronatural.com",
+  whatsapp: "50369674467",
+  mapUrl: "",
+  instagram: "@pronatural",
+  facebook: "fb.com/pronatural",
+  tiktok: "@pronatural",
+  youtube: "youtube.com/@pronatural",
+  taxRate: 0,
+  deliveryFee: 3.5,
+  metas: { diaria: 150, semanal: 1050, mensual: 4500 },
+  notificaciones: { enabled: true, lowStock: true, outOfStock: true },
+  reporteSemanal: { enabled: false, dia: 1, hora: 8, minuto: 0 },
+};
+
+const extractMapUrl = (value) => {
+  if (typeof value !== "string") return "";
+  const match = value.match(/src=["']([^"']+)["']/i);
+  return match?.[1] || value.trim();
+};
+
+const parseNonNegativeNumber = (value) => {
+  const amount = Number(String(value ?? "").trim().replace(",", "."));
+  return Number.isFinite(amount) && amount >= 0 ? amount : null;
+};
+
+const SettingSection = ({ title, description, children }) => (
+  <View style={styles.section}>
+    <View style={styles.sectionHeader}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      {description ? <Text style={styles.sectionDescription}>{description}</Text> : null}
+    </View>
+    <View style={styles.sectionBody}>{children}</View>
+  </View>
+);
+
+const SettingField = ({ label, value, onChangeText, placeholder, keyboardType, multiline, secureTextEntry, editable = true }) => (
+  <View style={styles.field}>
+    <Text style={styles.fieldLabel}>{label}</Text>
+    <TextInput
+      style={[styles.input, multiline && styles.multilineInput, !editable && styles.disabledInput]}
+      value={value == null ? "" : String(value)}
+      onChangeText={onChangeText}
+      placeholder={placeholder || ""}
+      placeholderTextColor="#69736d"
+      keyboardType={keyboardType || "default"}
+      autoCapitalize={keyboardType === "email-address" || keyboardType === "url" ? "none" : "sentences"}
+      autoCorrect={keyboardType !== "email-address" && keyboardType !== "url"}
+      multiline={multiline}
+      secureTextEntry={secureTextEntry}
+      editable={editable}
+      textAlignVertical={multiline ? "top" : "center"}
+    />
+  </View>
+);
+
+const ToggleRow = ({ title, description, value, disabled, onPress }) => (
+  <TouchableOpacity
+    style={styles.toggleRow}
+    onPress={onPress}
+    disabled={disabled}
+    activeOpacity={0.8}
+    accessibilityRole="switch"
+    accessibilityState={{ checked: !!value, disabled: !!disabled }}
+  >
+    <View style={styles.toggleCopy}>
+      <Text style={styles.toggleTitle}>{title}</Text>
+      {!!description && <Text style={styles.toggleDescription}>{description}</Text>}
+    </View>
+    <View style={[styles.switchTrack, value && styles.switchTrackActive, disabled && styles.disabledSwitch]}>
+      <View style={[styles.switchThumb, value && styles.switchThumbActive]} />
+    </View>
+  </TouchableOpacity>
+);
 
 const AdminSettingsScreen = () => {
-  const { authFetch, changeApiUrl, restoreDefaultApiUrl } = useAuth();
+  const { user, authFetch, updateUserProfile } = useAuth();
+  const [activeTab, setActiveTab] = useState("profile");
+  const [loading, setLoading] = useState(true);
+  const [settingsAvailable, setSettingsAvailable] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [savingStore, setSavingStore] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
+  const [savingReport, setSavingReport] = useState(false);
+  const [sendingReport, setSendingReport] = useState(false);
 
-  // Estados de configuración de tienda
-  const [storeName, setStoreName]   = useState("ProNatural Store");
-  const [minStock, setMinStock]     = useState("15");
-  const [notifEmail, setNotifEmail] = useState("admin@pronatural.com");
-  const [currency, setCurrency]     = useState("USD ($)");
-  const [saving, setSaving]         = useState(false);
-  const [sending, setSending]       = useState(false);
-
-  // Estados de conectividad del backend
-  const [customUrl, setCustomUrl]   = useState("");
-  const [testing, setTesting]       = useState(false);
-  const [pingResult, setPingResult] = useState(null);
-
-  // Modal de seguridad para cambio de servidor (Contraseña obligatoria: PRONATURALDEV)
-  const [authModalVisible, setAuthModalVisible] = useState(false);
-  const [devPassword, setDevPassword]           = useState("");
-  const [pendingTargetUrl, setPendingTargetUrl] = useState("");
+  const [profile, setProfile] = useState({ name: user?.name || "", phone: user?.phone || "" });
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [config, setConfig] = useState(DEFAULT_CONFIG);
+  const [passwords, setPasswords] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
 
   useEffect(() => {
-    const loadSettings = async () => {
-      try {
-        const currentUrl = await getApiBaseUrl();
-        setCustomUrl(currentUrl);
+    setProfile({ name: user?.name || "", phone: user?.phone || "" });
+  }, [user]);
 
-        const res = await authFetch("/ajustes");
-        if (res) {
-          if (res.nombreTienda) setStoreName(res.nombreTienda);
-          if (res.stockMinimoAlerta) setMinStock(String(res.stockMinimoAlerta));
-          if (res.correoNotificaciones) setNotifEmail(res.correoNotificaciones);
-          if (res.moneda) setCurrency(res.moneda);
-        }
-      } catch (err) {
-        console.warn("No se pudieron cargar ajustes remotos:", err.message);
+  useEffect(() => {
+    let isActive = true;
+    const loadSettings = async () => {
+      setLoading(true);
+      const [settingsResult, profileResult] = await Promise.allSettled([
+        authFetch("/ajustes"),
+        authFetch("/auth/profile"),
+      ]);
+
+      if (isActive && settingsResult.status === "fulfilled") {
+        const remote = settingsResult.value || {};
+        setSettingsAvailable(true);
+        setConfig({
+          ...DEFAULT_CONFIG,
+          ...remote,
+          mapUrl: extractMapUrl(remote.mapUrl || ""),
+          metas: { ...DEFAULT_CONFIG.metas, ...(remote.metas || {}) },
+          notificaciones: { ...DEFAULT_CONFIG.notificaciones, ...(remote.notificaciones || {}) },
+          reporteSemanal: { ...DEFAULT_CONFIG.reporteSemanal, ...(remote.reporteSemanal || {}) },
+        });
+      } else if (isActive && settingsResult.status === "rejected") {
+        setSettingsAvailable(false);
+        Alert.alert("No se cargaron los ajustes", settingsResult.reason?.message || "Comprueba la conexión e inténtalo de nuevo.");
       }
+
+      if (isActive && profileResult.status === "fulfilled" && profileResult.value) {
+        setProfile({ name: profileResult.value.name || user?.name || "", phone: profileResult.value.phone || user?.phone || "" });
+      }
+      if (isActive) setLoading(false);
     };
+
     loadSettings();
+    return () => { isActive = false; };
   }, []);
 
-  const handleSaveSettings = async () => {
-    setSaving(true);
+  const persistConfig = async (nextConfig) => {
+    if (!settingsAvailable) {
+      throw new Error("No se cargaron los ajustes del servidor. Vuelve a abrir esta pantalla antes de guardar.");
+    }
+    const response = await authFetch("/ajustes", {
+      method: "PUT",
+      body: JSON.stringify(nextConfig),
+    });
+    const savedConfig = response.ajustes || nextConfig;
+    setConfig({
+      ...DEFAULT_CONFIG,
+      ...savedConfig,
+      metas: { ...DEFAULT_CONFIG.metas, ...(savedConfig.metas || {}) },
+      notificaciones: { ...DEFAULT_CONFIG.notificaciones, ...(savedConfig.notificaciones || {}) },
+      reporteSemanal: { ...DEFAULT_CONFIG.reporteSemanal, ...(savedConfig.reporteSemanal || {}) },
+    });
+  };
+
+  const handleSaveProfile = async () => {
+    const name = profile.name.trim();
+    if (name.length < 2) {
+      Alert.alert("Nombre inválido", "Escribe tu nombre completo (al menos 2 caracteres).");
+      return;
+    }
+    setSavingProfile(true);
     try {
-      await authFetch("/ajustes", {
-        method: "PUT",
-        body: JSON.stringify({
-          nombreTienda: storeName.trim(),
-          stockMinimoAlerta: parseInt(minStock) || 15,
-          correoNotificaciones: notifEmail.trim(),
-          moneda: currency.trim(),
-        }),
+      const response = await updateUserProfile({ name, phone: profile.phone.trim() });
+      if (response.user) setProfile({ name: response.user.name || name, phone: response.user.phone || profile.phone.trim() });
+      setIsEditingProfile(false);
+      Alert.alert("Perfil actualizado", "Tu nombre y teléfono se guardaron correctamente.");
+    } catch (error) {
+      Alert.alert("No se actualizó el perfil", error.message || "Inténtalo de nuevo.");
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const handleSaveStore = async () => {
+    const storeName = config.storeName.trim();
+    const taxRate = parseNonNegativeNumber(config.taxRate);
+    const deliveryFee = parseNonNegativeNumber(config.deliveryFee);
+    const goals = {
+      diaria: parseNonNegativeNumber(config.metas.diaria),
+      semanal: parseNonNegativeNumber(config.metas.semanal),
+      mensual: parseNonNegativeNumber(config.metas.mensual),
+    };
+
+    if (storeName.length < 2) {
+      Alert.alert("Nombre inválido", "El nombre de la tienda debe tener al menos 2 caracteres.");
+      return;
+    }
+    if (!isValidEmail(config.email)) {
+      Alert.alert("Correo inválido", "Escribe un correo válido para la tienda.");
+      return;
+    }
+    if (taxRate === null || taxRate > 100) {
+      Alert.alert("Impuesto inválido", "La tasa debe estar entre 0 % y 100 %.");
+      return;
+    }
+    if (deliveryFee === null || Object.values(goals).some((value) => value === null)) {
+      Alert.alert("Cantidad inválida", "El costo de envío y las metas deben ser números iguales o mayores que cero.");
+      return;
+    }
+    for (const field of ["website", "mapUrl"]) {
+      const value = field === "mapUrl" ? extractMapUrl(config[field]) : String(config[field] || "").trim();
+      if (value && !normalizeApiUrl(value)) {
+        Alert.alert("Enlace inválido", `Revisa el campo ${field === "website" ? "Sitio web" : "Enlace del mapa"}; debe comenzar con http:// o https://.`);
+        return;
+      }
+    }
+
+    const nextConfig = {
+      ...config,
+      storeName,
+      email: config.email.trim().toLowerCase(),
+      phone: config.phone.trim(),
+      address: config.address.trim(),
+      mapUrl: extractMapUrl(config.mapUrl),
+      website: String(config.website || "").trim(),
+      whatsapp: config.whatsapp.trim(),
+      taxRate,
+      deliveryFee,
+      metas: goals,
+    };
+    setSavingStore(true);
+    try {
+      await persistConfig(nextConfig);
+      Alert.alert("Ajustes guardados", "La información de la tienda se actualizó para el sistema.");
+    } catch (error) {
+      Alert.alert("No se guardaron los ajustes", error.message || "Inténtalo de nuevo.");
+    } finally {
+      setSavingStore(false);
+    }
+  };
+
+  const saveConfigChange = async (nextConfig, setBusy = () => {}) => {
+    const previousConfig = config;
+    setConfig(nextConfig);
+    setBusy(true);
+    try {
+      await persistConfig(nextConfig);
+    } catch (error) {
+      setConfig(previousConfig);
+      Alert.alert("No se guardó el cambio", error.message || "Inténtalo de nuevo.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!passwords.currentPassword) {
+      Alert.alert("Falta la contraseña actual", "Ingresa tu contraseña actual para continuar.");
+      return;
+    }
+    if (passwords.newPassword.length < 6) {
+      Alert.alert("Contraseña muy corta", "La contraseña nueva debe tener al menos 6 caracteres.");
+      return;
+    }
+    if (passwords.newPassword !== passwords.confirmPassword) {
+      Alert.alert("Las contraseñas no coinciden", "Confirma la misma contraseña nueva en ambos campos.");
+      return;
+    }
+    setSavingPassword(true);
+    try {
+      const response = await authFetch("/auth/changePassword", {
+        method: "POST",
+        body: JSON.stringify({ currentPassword: passwords.currentPassword, newPassword: passwords.newPassword }),
       });
-      Alert.alert("✅ Ajustes Guardados", "La configuración de la tienda ha sido actualizada en la base de datos.");
-    } catch (err) {
-      Alert.alert("Error al guardar", err.message || "No se pudo guardar la configuración.");
+      setPasswords({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      Alert.alert("Contraseña actualizada", response.message || "Se guardó el cambio y se envió una notificación al correo de la cuenta.");
+    } catch (error) {
+      Alert.alert("No se cambió la contraseña", error.message || "Comprueba la contraseña actual e inténtalo de nuevo.");
     } finally {
-      setSaving(false);
+      setSavingPassword(false);
     }
   };
 
-  // Solicita la contraseña de desarrollador antes de cambiar la URL
-  const requestChangeUrl = (target) => {
-    const urlToSet = target || customUrl;
-    if (!urlToSet || !urlToSet.trim()) {
-      Alert.alert("URL requerida", "Ingresa una dirección de servidor válida.");
+  const handleReportScheduleChange = (field, value) => {
+    const schedule = { ...config.reporteSemanal, [field]: value };
+    const day = Number(schedule.dia);
+    const hour = Number(schedule.hora);
+    const minute = Number(schedule.minuto);
+    if (!Number.isInteger(day) || day < 0 || day > 6 || !Number.isInteger(hour) || hour < 0 || hour > 23 || !Number.isInteger(minute) || minute < 0 || minute > 59) {
+      Alert.alert("Horario inválido", "Selecciona un día válido y usa una hora entre 0 y 23 y minutos entre 0 y 59.");
       return;
     }
-    setPendingTargetUrl(urlToSet.trim());
-    setDevPassword("");
-    setAuthModalVisible(true);
+    const nextConfig = {
+      ...config,
+      reporteSemanal: { ...schedule, dia: day, hora, minuto },
+    };
+    saveConfigChange(nextConfig, setSavingReport);
   };
 
-  // Valida la clave fija PRONATURALDEV y aplica el cambio
-  const confirmChangeUrl = async () => {
-    if (devPassword !== "PRONATURALDEV") {
-      Alert.alert(
-        "🔒 Acceso Denegado",
-        "La contraseña de desarrollador es incorrecta. No se aplicó ningún cambio."
-      );
+  const handleSaveReportTime = () => {
+    const hour = Number(config.reporteSemanal.hora);
+    const minute = Number(config.reporteSemanal.minuto);
+    if (!Number.isInteger(hour) || hour < 0 || hour > 23 || !Number.isInteger(minute) || minute < 0 || minute > 59) {
+      Alert.alert("Horario inválido", "Usa una hora entre 0 y 23 y minutos entre 0 y 59.");
       return;
     }
-
-    setAuthModalVisible(false);
-    try {
-      await changeApiUrl(pendingTargetUrl);
-      setCustomUrl(pendingTargetUrl);
-      Alert.alert(
-        "✅ Servidor Actualizado",
-        `La app ahora se conecta a:\n${pendingTargetUrl}`
-      );
-      handlePing(pendingTargetUrl);
-    } catch (err) {
-      Alert.alert("Error", err.message || "No se pudo actualizar el servidor.");
-    }
+    const nextConfig = {
+      ...config,
+      reporteSemanal: { ...config.reporteSemanal, hora, minuto },
+    };
+    saveConfigChange(nextConfig, setSavingReport);
   };
 
-  const handlePing = async (target) => {
-    setTesting(true);
-    setPingResult(null);
+  const handleSendInventoryReport = async () => {
+    setSendingReport(true);
     try {
-      const res = await testApiConnection(target || customUrl);
-      setPingResult(res);
-    } catch (err) {
-      setPingResult({ success: false, message: err.message });
+      const result = await authFetch("/ajustes/send-report", { method: "POST" });
+      Alert.alert("Reporte enviado", result.message || `El reporte de inventario se envió al correo ${user?.email || "administrativo"}.`);
+    } catch (error) {
+      Alert.alert("No se envió el reporte", error.message || "El servidor no pudo generar el reporte.");
     } finally {
-      setTesting(false);
+      setSendingReport(false);
     }
   };
 
-  const handleSendEmailReport = async () => {
-    setSending(true);
-    try {
-      await authFetch("/ajustes/send-report", { method: "POST" });
-      Alert.alert(
-        "📧 Reporte Enviado",
-        "El informe de inventario ha sido generado en PDF y enviado por correo a los administradores."
-      );
-    } catch (err) {
-      Alert.alert("Error al enviar reporte", err.message || "El servicio de correo no respondió.");
-    } finally {
-      setSending(false);
-    }
-  };
-
-  const isCloud = customUrl.includes("onrender.com");
-
-  return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.scroll}>
-      <Text style={styles.description}>
-        Configura los parámetros del sistema, la conectividad del servidor y los reportes de inventario.
-      </Text>
-
-      {/* SECCIÓN 1: CONECTIVIDAD DEL SERVIDOR (PROTEGIDA CON PRONATURALDEV) */}
-      <View style={styles.card}>
-        <View style={styles.cardHdr}>
-          <Ionicons name="server-outline" size={20} color="#30b466" />
-          <Text style={styles.cardTitle}>Conectividad del Backend</Text>
-          <View style={styles.securityBadge}>
-            <Ionicons name="lock-closed" size={10} color="#30b466" />
-            <Text style={styles.securityBadgeTxt}>PROTEGIDO</Text>
+  const renderProfileTab = () => (
+    <>
+      <SettingSection title="Tu perfil" description="Información personal y rol dentro del sistema.">
+        <View style={styles.profileSummary}>
+          <View style={styles.profileAvatar}><Text style={styles.profileAvatarText}>{(user?.name || "A").charAt(0).toUpperCase()}</Text></View>
+          <View style={styles.profileIdentity}>
+            <Text style={styles.profileName}>{user?.name || "Administrador"}</Text>
+            <Text style={styles.profileEmail}>{user?.email || ""}</Text>
+            <Text style={styles.rolePill}>{user?.role === "Employee" ? "Vendedor" : "Administrador"}</Text>
           </View>
+          {!isEditingProfile && <TouchableOpacity onPress={() => setIsEditingProfile(true)} style={styles.editIconButton} accessibilityLabel="Editar perfil"><Ionicons name="create-outline" size={19} color="#208B51" /></TouchableOpacity>}
         </View>
-
-        <Text style={styles.cardDesc}>
-          Modificar el servidor requiere autorización de desarrollador.
-        </Text>
-
-        {/* Estado actual de conexión */}
-        <View style={styles.statusBox}>
-          <View style={styles.statusRow}>
-            <View
-              style={[
-                styles.statusDot,
-                { backgroundColor: isCloud ? "#30b466" : "#f59e0b" },
-              ]}
-            />
-            <Text style={styles.statusLabel}>
-              {isCloud ? "Nube Oficial HTTPS (Render)" : "Servidor Local / Personalizado"}
-            </Text>
-          </View>
-          <Text style={styles.statusUrl} numberOfLines={1}>
-            {customUrl || "No configurada"}
-          </Text>
-        </View>
-
-        {/* Botones de cambio rápido */}
-        <View style={styles.quickBtnsRow}>
-          <TouchableOpacity
-            style={[styles.quickBtn, isCloud && styles.quickBtnActive]}
-            onPress={() => requestChangeUrl(DEFAULT_CLOUD_URL)}
-            activeOpacity={0.8}
-          >
-            <Ionicons
-              name="cloud-outline"
-              size={14}
-              color={isCloud ? "#30b466" : "#888"}
-            />
-            <Text
-              style={[
-                styles.quickBtnTxt,
-                isCloud && styles.quickBtnTxtActive,
-              ]}
-            >
-              Nube (Render)
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.quickBtn, !isCloud && styles.quickBtnActive]}
-            onPress={() => requestChangeUrl(DEFAULT_LOCAL_URL)}
-            activeOpacity={0.8}
-          >
-            <Ionicons
-              name="laptop-outline"
-              size={14}
-              color={!isCloud ? "#30b466" : "#888"}
-            />
-            <Text
-              style={[
-                styles.quickBtnTxt,
-                !isCloud && styles.quickBtnTxtActive,
-              ]}
-            >
-              Local (PC)
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Input manual de URL */}
-        <View style={styles.field}>
-          <Text style={styles.fieldLabel}>Dirección URL del Backend</Text>
-          <View style={styles.urlInputRow}>
-            <TextInput
-              style={styles.urlInput}
-              value={customUrl}
-              onChangeText={setCustomUrl}
-              placeholder="https://tu-servidor.com/api"
-              placeholderTextColor="#555"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            <TouchableOpacity
-              style={styles.applyBtn}
-              onPress={() => requestChangeUrl(customUrl)}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="key-outline" size={14} color="#0a110d" />
-              <Text style={styles.applyBtnTxt}>Aplicar</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Botón de Ping / Prueba de Latencia */}
-        <TouchableOpacity
-          style={styles.pingBtn}
-          onPress={() => handlePing(customUrl)}
-          disabled={testing}
-          activeOpacity={0.8}
-        >
-          {testing ? (
-            <ActivityIndicator size="small" color="#4ade80" />
-          ) : (
-            <>
-              <Ionicons name="pulse-outline" size={16} color="#4ade80" />
-              <Text style={styles.pingBtnTxt}>Probar Conexión (Ping)</Text>
-            </>
-          )}
-        </TouchableOpacity>
-
-        {/* Resultado del Ping con explicación de latencia */}
-        {pingResult && (
-          <View
-            style={[
-              styles.pingBox,
-              pingResult.success ? styles.pingBoxSuccess : styles.pingBoxError,
-            ]}
-          >
-            <Ionicons
-              name={pingResult.success ? "checkmark-circle" : "close-circle"}
-              size={18}
-              color={pingResult.success ? "#30b466" : "#ef4444"}
-            />
-            <View style={{ flex: 1 }}>
-              <Text
-                style={[
-                  styles.pingMsg,
-                  { color: pingResult.success ? "#4ade80" : "#ef4444" },
-                ]}
-              >
-                {pingResult.message}
-              </Text>
-              {pingResult.latency !== undefined && (
-                <Text style={styles.pingDetail}>
-                  Latencia RTT: {pingResult.latency} ms {isCloud ? "(Nube Render · EE.UU. a Centroamérica con TLS)" : "(Red Local LAN)"}
-                </Text>
-              )}
-            </View>
+        <SettingField label="Nombre completo" value={profile.name} onChangeText={(name) => setProfile((current) => ({ ...current, name }))} editable={isEditingProfile} placeholder="Tu nombre completo" />
+        <SettingField label="Correo electrónico" value={user?.email || ""} editable={false} />
+        <SettingField label="Teléfono" value={profile.phone} onChangeText={(phone) => setProfile((current) => ({ ...current, phone }))} editable={isEditingProfile} placeholder="+503 7000 0000" keyboardType="phone-pad" />
+        <SettingField label="Cargo / rol" value={user?.role === "Employee" ? "Empleado / Vendedor" : "Administrador"} editable={false} />
+        {isEditingProfile && (
+          <View style={styles.actionRow}>
+            <TouchableOpacity style={styles.secondaryButton} onPress={() => { setIsEditingProfile(false); setProfile({ name: user?.name || "", phone: user?.phone || "" }); }}><Text style={styles.secondaryButtonText}>Cancelar</Text></TouchableOpacity>
+            <TouchableOpacity style={styles.primaryButton} onPress={handleSaveProfile} disabled={savingProfile}>{savingProfile ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.primaryButtonText}>Guardar perfil</Text>}</TouchableOpacity>
           </View>
         )}
-      </View>
+      </SettingSection>
+    </>
+  );
 
-      {/* SECCIÓN 2: AJUSTES DE TIENDA */}
-      <View style={styles.card}>
-        <View style={styles.cardHdr}>
-          <Ionicons name="storefront-outline" size={20} color="#30b466" />
-          <Text style={styles.cardTitle}>Parámetros de la Tienda</Text>
-        </View>
+  const renderStoreTab = () => (
+    <>
+      <SettingSection title="Datos de la empresa" description="Información que aparece en la tienda y los recibos.">
+        <SettingField label="Nombre de la tienda" value={config.storeName} onChangeText={(value) => setConfig((current) => ({ ...current, storeName: value }))} />
+        <SettingField label="RUC / NIT" value={config.ruc} onChangeText={(value) => setConfig((current) => ({ ...current, ruc: value }))} placeholder="0614-XXXXXX-XXX-X" />
+        <SettingField label="Correo de contacto" value={config.email} onChangeText={(value) => setConfig((current) => ({ ...current, email: value }))} keyboardType="email-address" />
+        <SettingField label="Teléfono de contacto" value={config.phone} onChangeText={(value) => setConfig((current) => ({ ...current, phone: value }))} keyboardType="phone-pad" />
+        <SettingField label="Dirección física" value={config.address} onChangeText={(value) => setConfig((current) => ({ ...current, address: value }))} multiline />
+        <SettingField label="Enlace del mapa (Google Maps)" value={config.mapUrl} onChangeText={(value) => setConfig((current) => ({ ...current, mapUrl: value }))} placeholder="https://www.google.com/maps/embed?..." />
+        <SettingField label="Sitio web" value={config.website} onChangeText={(value) => setConfig((current) => ({ ...current, website: value }))} placeholder="https://pronatural.com" keyboardType="url" />
+        <SettingField label="WhatsApp Business" value={config.whatsapp} onChangeText={(value) => setConfig((current) => ({ ...current, whatsapp: value }))} keyboardType="phone-pad" />
+      </SettingSection>
 
-        <View style={styles.field}>
-          <Text style={styles.fieldLabel}>Nombre de la Tienda</Text>
-          <TextInput
-            style={styles.input}
-            value={storeName}
-            onChangeText={setStoreName}
-            placeholder="ProNatural Store"
-            placeholderTextColor="#555"
-          />
-        </View>
+      <SettingSection title="Redes sociales">
+        <SettingField label="Instagram" value={config.instagram} onChangeText={(value) => setConfig((current) => ({ ...current, instagram: value }))} placeholder="@pronatural" />
+        <SettingField label="Facebook" value={config.facebook} onChangeText={(value) => setConfig((current) => ({ ...current, facebook: value }))} placeholder="fb.com/pronatural" />
+        <SettingField label="TikTok" value={config.tiktok} onChangeText={(value) => setConfig((current) => ({ ...current, tiktok: value }))} placeholder="@pronatural" />
+        <SettingField label="YouTube" value={config.youtube} onChangeText={(value) => setConfig((current) => ({ ...current, youtube: value }))} placeholder="youtube.com/@pronatural" />
+      </SettingSection>
 
-        <View style={styles.field}>
-          <Text style={styles.fieldLabel}>Umbral de Stock Mínimo (Alerta)</Text>
-          <TextInput
-            style={styles.input}
-            value={minStock}
-            onChangeText={setMinStock}
-            keyboardType="numeric"
-            placeholder="15"
-            placeholderTextColor="#555"
-          />
-          <Text style={styles.fieldHint}>
-            Productos con stock igual o menor a esta cifra activarán alertas críticas en el panel.
-          </Text>
-        </View>
+      <SettingSection title="Metas de ventas" description="Objetivos usados por el panel administrativo.">
+        <SettingField label="Meta diaria ($)" value={config.metas.diaria} onChangeText={(value) => setConfig((current) => ({ ...current, metas: { ...current.metas, diaria: value } }))} keyboardType="decimal-pad" />
+        <SettingField label="Meta semanal ($)" value={config.metas.semanal} onChangeText={(value) => setConfig((current) => ({ ...current, metas: { ...current.metas, semanal: value } }))} keyboardType="decimal-pad" />
+        <SettingField label="Meta mensual ($)" value={config.metas.mensual} onChangeText={(value) => setConfig((current) => ({ ...current, metas: { ...current.metas, mensual: value } }))} keyboardType="decimal-pad" />
+      </SettingSection>
 
-        <View style={styles.field}>
-          <Text style={styles.fieldLabel}>Correo de Notificaciones</Text>
-          <TextInput
-            style={styles.input}
-            value={notifEmail}
-            onChangeText={setNotifEmail}
-            keyboardType="email-address"
-            placeholder="admin@pronatural.com"
-            placeholderTextColor="#555"
-          />
-        </View>
+      <SettingSection title="Impuestos y tarifas de envío" description="Valores compartidos con la tienda web.">
+        <SettingField label="Tasa de impuesto (%)" value={config.taxRate} onChangeText={(value) => setConfig((current) => ({ ...current, taxRate: value }))} keyboardType="decimal-pad" />
+        <SettingField label="Costo de envío / delivery ($ USD)" value={config.deliveryFee} onChangeText={(value) => setConfig((current) => ({ ...current, deliveryFee: value }))} keyboardType="decimal-pad" />
+      </SettingSection>
 
-        <View style={styles.field}>
-          <Text style={styles.fieldLabel}>Moneda de Operación</Text>
-          <TextInput
-            style={styles.input}
-            value={currency}
-            onChangeText={setCurrency}
-            placeholder="USD ($)"
-            placeholderTextColor="#555"
-          />
-        </View>
+      <TouchableOpacity style={styles.primaryButtonFull} onPress={handleSaveStore} disabled={savingStore}>
+        {savingStore ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.primaryButtonText}>Guardar cambios de tienda</Text>}
+      </TouchableOpacity>
+    </>
+  );
 
-        <TouchableOpacity
-          style={styles.saveBtn}
-          onPress={handleSaveSettings}
-          disabled={saving}
-          activeOpacity={0.8}
-        >
-          {saving ? (
-            <ActivityIndicator color="#0a110d" size="small" />
-          ) : (
-            <Text style={styles.saveBtnTxt}>Guardar Ajustes</Text>
-          )}
+  const renderSecurityTab = () => (
+    <>
+      <SettingSection title="Cambiar contraseña" description="Usa una contraseña nueva de al menos 6 caracteres. Se notificará por correo.">
+        <SettingField label="Contraseña actual" value={passwords.currentPassword} onChangeText={(value) => setPasswords((current) => ({ ...current, currentPassword: value }))} secureTextEntry />
+        <SettingField label="Nueva contraseña" value={passwords.newPassword} onChangeText={(value) => setPasswords((current) => ({ ...current, newPassword: value }))} secureTextEntry />
+        <SettingField label="Confirmar contraseña nueva" value={passwords.confirmPassword} onChangeText={(value) => setPasswords((current) => ({ ...current, confirmPassword: value }))} secureTextEntry />
+        <TouchableOpacity style={styles.primaryButtonFull} onPress={handleChangePassword} disabled={savingPassword}>
+          {savingPassword ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.primaryButtonText}>Actualizar contraseña</Text>}
         </TouchableOpacity>
-      </View>
+      </SettingSection>
 
-      {/* SECCIÓN 3: ACCIONES DE ADMINISTRADOR */}
-      <View style={styles.card}>
-        <View style={styles.cardHdr}>
-          <Ionicons name="mail-outline" size={20} color="#30b466" />
-          <Text style={styles.cardTitle}>Reportes Automáticos por Correo</Text>
-        </View>
+</>
+  );
 
-        <Text style={styles.cardDesc}>
-          Envía el informe ejecutivo de stock y métricas a los correos configurados.
-        </Text>
+  const renderNotificationsTab = () => (
+    <>
+      <SettingSection title="Notificaciones generales" description="Estas preferencias se comparten con el panel web.">
+        <ToggleRow title="Notificaciones en el portal" value={config.notificaciones.enabled} onPress={() => saveConfigChange({ ...config, notificaciones: { ...config.notificaciones, enabled: !config.notificaciones.enabled } })} />
+        <ToggleRow title="Stock bajo" description="Avisar cuando un producto esté por agotarse." value={config.notificaciones.lowStock} disabled={!config.notificaciones.enabled} onPress={() => saveConfigChange({ ...config, notificaciones: { ...config.notificaciones, lowStock: !config.notificaciones.lowStock } })} />
+        <ToggleRow title="Producto agotado" description="Avisar cuando un producto llegue a cero unidades." value={config.notificaciones.outOfStock} disabled={!config.notificaciones.enabled} onPress={() => saveConfigChange({ ...config, notificaciones: { ...config.notificaciones, outOfStock: !config.notificaciones.outOfStock } })} />
+      </SettingSection>
 
-        <TouchableOpacity
-          style={styles.reportBtn}
-          onPress={handleSendEmailReport}
-          disabled={sending}
-          activeOpacity={0.8}
-        >
-          {sending ? (
-            <ActivityIndicator color="#4ade80" size="small" />
-          ) : (
-            <>
-              <Ionicons name="send" size={15} color="#4ade80" />
-              <Text style={styles.reportBtnTxt}>Enviar Reporte de Inventario Ahora</Text>
-            </>
-          )}
-        </TouchableOpacity>
-      </View>
-
-      {/* MODAL DE SEGURIDAD (CONTRASENA PRONATURALDEV) */}
-      <Modal
-        visible={authModalVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setAuthModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            <View style={styles.modalIconWrap}>
-              <Ionicons name="shield-checkmark" size={28} color="#30b466" />
+      <SettingSection title="Reporte semanal de inventario" description="Programa el envío automático del PDF a los administradores.">
+        <ToggleRow title="Habilitar envío automático" description="El servidor enviará el reporte según el horario elegido." value={config.reporteSemanal.enabled} disabled={savingReport} onPress={() => handleReportScheduleChange("enabled", !config.reporteSemanal.enabled)} />
+        {config.reporteSemanal.enabled && (
+          <>
+            <Text style={styles.fieldLabel}>Día de la semana</Text>
+            <View style={styles.daySelector}>
+              {WEEK_DAYS.map((day, index) => (
+                <TouchableOpacity key={day} style={[styles.dayButton, config.reporteSemanal.dia === index && styles.dayButtonActive]} onPress={() => handleReportScheduleChange("dia", index)} disabled={savingReport}>
+                  <Text style={[styles.dayButtonText, config.reporteSemanal.dia === index && styles.dayButtonTextActive]}>{day}</Text>
+                </TouchableOpacity>
+              ))}
             </View>
-
-            <Text style={styles.modalTitle}>Autorización de Desarrollador</Text>
-            <Text style={styles.modalSub}>
-              Para cambiar la conectividad del backend a:
-            </Text>
-            <Text style={styles.modalTargetUrl} numberOfLines={2}>
-              {pendingTargetUrl}
-            </Text>
-
-            <Text style={styles.modalInputLabel}>Ingresa la contraseña maestra:</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Contraseña requerida"
-              placeholderTextColor="#555"
-              secureTextEntry={true}
-              autoCapitalize="characters"
-              value={devPassword}
-              onChangeText={setDevPassword}
-            />
-
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={styles.modalCancelBtn}
-                onPress={() => setAuthModalVisible(false)}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.modalCancelBtnTxt}>Cancelar</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.modalConfirmBtn}
-                onPress={confirmChangeUrl}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.modalConfirmBtnTxt}>Verificar y Aplicar</Text>
-              </TouchableOpacity>
+            <View style={styles.timeFields}>
+              <View style={{ flex: 1 }}><SettingField label="Hora (24 h)" value={config.reporteSemanal.hora} onChangeText={(value) => { if (/^\d{0,2}$/.test(value)) setConfig((current) => ({ ...current, reporteSemanal: { ...current.reporteSemanal, hora: value } })); }} keyboardType="number-pad" /></View>
+              <View style={{ flex: 1 }}><SettingField label="Minuto" value={config.reporteSemanal.minuto} onChangeText={(value) => { if (/^\d{0,2}$/.test(value)) setConfig((current) => ({ ...current, reporteSemanal: { ...current.reporteSemanal, minuto: value } })); }} keyboardType="number-pad" /></View>
             </View>
+            <TouchableOpacity style={styles.secondaryButton} onPress={handleSaveReportTime} disabled={savingReport}>
+              <Text style={styles.secondaryButtonText}>{savingReport ? "Guardando horario…" : `Guardar horario · ${String(config.reporteSemanal.hora).padStart(2, "0")}:${String(config.reporteSemanal.minuto).padStart(2, "0")}`}</Text>
+            </TouchableOpacity>
+          </>
+        )}
+        <View style={styles.reportAction}>
+          <View style={styles.reportActionCopy}>
+            <Text style={styles.reportActionTitle}>¿Necesitas el reporte ahora?</Text>
+            <Text style={styles.reportActionDescription}>Genera y envía el PDF de inventario a los administradores.</Text>
           </View>
+          <TouchableOpacity style={styles.reportButton} onPress={handleSendInventoryReport} disabled={sendingReport}>
+            {sendingReport ? <ActivityIndicator color="#208B51" /> : <><Ionicons name="download-outline" size={17} color="#208B51" /><Text style={styles.reportButtonText}>Enviar</Text></>}
+          </TouchableOpacity>
         </View>
-      </Modal>
+      </SettingSection>
+    </>
+  );
+
+  return (
+    <ScrollView style={styles.screen} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <View style={styles.heading}>
+        <View style={styles.headingIcon}><Ionicons name="options-outline" size={22} color="#208B51" /></View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.title}>Ajustes del sistema</Text>
+          <Text style={styles.subtitle}>Tu cuenta y preferencias compartidas de ProNatural</Text>
+        </View>
+      </View>
+
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsScroll} contentContainerStyle={styles.tabs}>
+        {TABS.map((tab) => (
+          <TouchableOpacity key={tab.id} style={[styles.tab, activeTab === tab.id && styles.tabActive]} onPress={() => setActiveTab(tab.id)} accessibilityRole="tab" accessibilityState={{ selected: activeTab === tab.id }}>
+            <Text style={[styles.tabText, activeTab === tab.id && styles.tabTextActive]}>{tab.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      {loading ? (
+        <View style={styles.loading}><ActivityIndicator size="large" color="#0B2B1E" /><Text style={styles.loadingText}>Cargando ajustes…</Text></View>
+      ) : (
+        <View style={styles.sections}>
+          {activeTab === "profile" && renderProfileTab()}
+          {(activeTab === "store" || activeTab === "notifications") && !settingsAvailable && (
+            <SettingSection title="Ajustes no disponibles" description="No se pudieron cargar los datos del servidor. Vuelve a abrir esta pantalla para intentarlo de nuevo." />
+          )}
+          {activeTab === "store" && settingsAvailable && renderStoreTab()}
+          {activeTab === "security" && renderSecurityTab()}
+          {activeTab === "notifications" && settingsAvailable && renderNotificationsTab()}
+        </View>
+      )}
     </ScrollView>
   );
 };
@@ -458,278 +492,65 @@ const AdminSettingsScreen = () => {
 export default AdminSettingsScreen;
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#0a0d0f" },
-  scroll: { padding: 16, paddingBottom: 40 },
-  description: {
-    color: "#888",
-    fontSize: 12,
-    lineHeight: 18,
-    marginBottom: 16,
-  },
-  card: {
-    backgroundColor: "#161b1e",
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
-  },
-  cardHdr: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 6,
-  },
-  cardTitle: {
-    color: "#fff",
-    fontSize: 15,
-    fontWeight: "bold",
-    flex: 1,
-  },
-  securityBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
-    backgroundColor: "rgba(48,180,102,0.12)",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  securityBadgeTxt: {
-    color: "#30b466",
-    fontSize: 9,
-    fontWeight: "bold",
-    letterSpacing: 0.5,
-  },
-  cardDesc: {
-    color: "#666",
-    fontSize: 12,
-    lineHeight: 16,
-    marginBottom: 14,
-  },
-  statusBox: {
-    backgroundColor: "#121619",
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
-  },
-  statusRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 4,
-  },
-  statusDot: { width: 8, height: 8, borderRadius: 4 },
-  statusLabel: { color: "#fff", fontSize: 13, fontWeight: "600" },
-  statusUrl: { color: "#888", fontSize: 11, fontFamily: "monospace" },
-  quickBtnsRow: {
-    flexDirection: "row",
-    gap: 10,
-    marginBottom: 14,
-  },
-  quickBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    backgroundColor: "#121619",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  quickBtnActive: {
-    backgroundColor: "rgba(48,180,102,0.12)",
-    borderColor: "rgba(48,180,102,0.3)",
-  },
-  quickBtnTxt: { color: "#777", fontSize: 12, fontWeight: "600" },
-  quickBtnTxtActive: { color: "#4ade80", fontWeight: "bold" },
-  field: { marginBottom: 12 },
-  fieldLabel: {
-    color: "#aaa",
-    fontSize: 11,
-    fontWeight: "600",
-    textTransform: "uppercase",
-    letterSpacing: 0.3,
-    marginBottom: 6,
-  },
-  fieldHint: { color: "#555", fontSize: 10.5, marginTop: 4 },
-  input: {
-    backgroundColor: "#0d1114",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-    borderRadius: 8,
-    color: "#fff",
-    paddingHorizontal: 12,
-    height: 42,
-    fontSize: 13,
-  },
-  urlInputRow: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  urlInput: {
-    flex: 1,
-    backgroundColor: "#0d1114",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-    borderRadius: 8,
-    color: "#fff",
-    paddingHorizontal: 12,
-    height: 42,
-    fontSize: 12,
-  },
-  applyBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "#30b466",
-    paddingHorizontal: 14,
-    borderRadius: 8,
-    justifyContent: "center",
-  },
-  applyBtnTxt: { color: "#0a110d", fontWeight: "bold", fontSize: 12 },
-  pingBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    backgroundColor: "rgba(48,180,102,0.08)",
-    borderWidth: 1,
-    borderColor: "rgba(48,180,102,0.2)",
-    paddingVertical: 10,
-    borderRadius: 8,
-    marginTop: 4,
-  },
-  pingBtnTxt: { color: "#4ade80", fontSize: 12, fontWeight: "bold" },
-  pingBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    padding: 10,
-    borderRadius: 8,
-    marginTop: 10,
-  },
-  pingBoxSuccess: { backgroundColor: "rgba(48,180,102,0.1)" },
-  pingBoxError: { backgroundColor: "rgba(239,68,68,0.1)" },
-  pingMsg: { fontSize: 12, fontWeight: "bold" },
-  pingDetail: { color: "#888", fontSize: 10, marginTop: 2 },
-  saveBtn: {
-    backgroundColor: "#30b466",
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 6,
-  },
-  saveBtnTxt: { color: "#0a110d", fontSize: 13.5, fontWeight: "bold" },
-  reportBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    backgroundColor: "rgba(48,180,102,0.1)",
-    borderWidth: 1,
-    borderColor: "rgba(48,180,102,0.25)",
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  reportBtnTxt: { color: "#4ade80", fontSize: 13, fontWeight: "bold" },
-
-  // Modal de autorización
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.8)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-  modalCard: {
-    width: "100%",
-    maxWidth: 340,
-    backgroundColor: "#161b1e",
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-    alignItems: "center",
-  },
-  modalIconWrap: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    backgroundColor: "rgba(48,180,102,0.15)",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  modalTitle: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginBottom: 4,
-  },
-  modalSub: {
-    color: "#888",
-    fontSize: 12,
-    textAlign: "center",
-  },
-  modalTargetUrl: {
-    color: "#4ade80",
-    fontSize: 11,
-    fontFamily: "monospace",
-    textAlign: "center",
-    backgroundColor: "#0d1114",
-    padding: 6,
-    borderRadius: 6,
-    marginVertical: 10,
-    width: "100%",
-  },
-  modalInputLabel: {
-    color: "#aaa",
-    fontSize: 11,
-    fontWeight: "bold",
-    textTransform: "uppercase",
-    alignSelf: "flex-start",
-    marginBottom: 6,
-  },
-  modalInput: {
-    width: "100%",
-    backgroundColor: "#0d1114",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.15)",
-    borderRadius: 8,
-    color: "#fff",
-    paddingHorizontal: 12,
-    height: 42,
-    fontSize: 14,
-    marginBottom: 16,
-    textAlign: "center",
-    letterSpacing: 2,
-  },
-  modalActions: {
-    flexDirection: "row",
-    gap: 10,
-    width: "100%",
-  },
-  modalCancelBtn: {
-    flex: 1,
-    paddingVertical: 11,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-    alignItems: "center",
-  },
-  modalCancelBtnTxt: { color: "#888", fontSize: 13, fontWeight: "bold" },
-  modalConfirmBtn: {
-    flex: 1.4,
-    backgroundColor: "#30b466",
-    paddingVertical: 11,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  modalConfirmBtnTxt: { color: "#0a110d", fontSize: 13, fontWeight: "bold" },
+  screen: { flex: 1, backgroundColor: "#FAF9F6" },
+  content: { padding: 16, paddingBottom: 36 },
+  heading: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 18 },
+  headingIcon: { width: 46, height: 46, borderRadius: 15, backgroundColor: "rgba(11, 43, 30, 0.13)", borderWidth: 1, borderColor: "rgba(11, 43, 30, 0.25)", alignItems: "center", justifyContent: "center" },
+  title: { color: "#102B1E", fontSize: 21, fontWeight: "800" },
+  subtitle: { color: "#68736A", fontSize: 12, marginTop: 3, lineHeight: 17 },
+  tabsScroll: { flexGrow: 0, marginBottom: 16 },
+  tabs: { gap: 8, paddingRight: 10 },
+  tab: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 14, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "rgba(16, 43, 30, 0.06)" },
+  tabActive: { backgroundColor: "rgba(11, 43, 30, 0.16)", borderColor: "rgba(11, 43, 30, 0.38)" },
+  tabText: { color: "#68736A", fontSize: 12, fontWeight: "600" },
+  tabTextActive: { color: "#208B51", fontWeight: "800" },
+  sections: { gap: 14 },
+  section: { backgroundColor: "#FFFFFF", borderRadius: 20, borderWidth: 1, borderColor: "rgba(16, 43, 30, 0.07)", overflow: "hidden" },
+  sectionHeader: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 13, borderBottomWidth: 1, borderBottomColor: "rgba(16, 43, 30, 0.06)" },
+  sectionTitle: { color: "#102B1E", fontSize: 16, fontWeight: "700" },
+  sectionDescription: { color: "#68736A", fontSize: 12, lineHeight: 17, marginTop: 4 },
+  sectionBody: { padding: 16 },
+  field: { marginBottom: 14 },
+  fieldLabel: { color: "#59675e", fontSize: 12, fontWeight: "650", marginBottom: 7 },
+  input: { minHeight: 46, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "rgba(16, 43, 30, 0.09)", borderRadius: 12, paddingHorizontal: 13, paddingVertical: 11, color: "#102B1E", fontSize: 14 },
+  multilineInput: { minHeight: 84 },
+  disabledInput: { color: "#68736A", backgroundColor: "#F3F1EB" },
+  profileSummary: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 18, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: "rgba(16, 43, 30, 0.06)" },
+  profileAvatar: { width: 54, height: 54, borderRadius: 19, backgroundColor: "rgba(11, 43, 30, 0.17)", borderWidth: 1, borderColor: "rgba(11, 43, 30, 0.35)", alignItems: "center", justifyContent: "center" },
+  profileAvatarText: { color: "#208B51", fontSize: 22, fontWeight: "800" },
+  profileIdentity: { flex: 1 },
+  profileName: { color: "#102B1E", fontSize: 15, fontWeight: "700" },
+  profileEmail: { color: "#68736A", fontSize: 12, marginTop: 3 },
+  rolePill: { alignSelf: "flex-start", color: "#208B51", fontSize: 10, fontWeight: "700", backgroundColor: "rgba(11, 43, 30, 0.12)", borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3, marginTop: 6 },
+  editIconButton: { width: 40, height: 40, borderRadius: 13, backgroundColor: "rgba(11, 43, 30, 0.1)", alignItems: "center", justifyContent: "center" },
+  actionRow: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 2, marginBottom: 12 },
+  primaryButton: { minHeight: 46, paddingHorizontal: 16, borderRadius: 13, alignItems: "center", justifyContent: "center", backgroundColor: "#0B2B1E", flex: 1 },
+  primaryButtonFull: { minHeight: 48, paddingHorizontal: 16, borderRadius: 14, alignItems: "center", justifyContent: "center", backgroundColor: "#0B2B1E", marginTop: 4, marginBottom: 4 },
+  primaryButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "800", textAlign: "center" },
+  secondaryButton: { flex: 1, minHeight: 44, paddingHorizontal: 11, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: "#F5F3ED", borderWidth: 1, borderColor: "rgba(16, 43, 30, 0.12)" },
+  secondaryButtonText: { color: "#263F33", fontSize: 12, fontWeight: "700", textAlign: "center" },
+  toggleRow: { minHeight: 68, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: "rgba(16, 43, 30, 0.06)" },
+  toggleCopy: { flex: 1 },
+  toggleTitle: { color: "#263F33", fontSize: 14, fontWeight: "600" },
+  toggleDescription: { color: "#68736A", fontSize: 11, lineHeight: 16, marginTop: 3 },
+  switchTrack: { width: 48, height: 28, borderRadius: 15, padding: 3, backgroundColor: "#D9DED8", justifyContent: "center" },
+  switchTrackActive: { backgroundColor: "#238a4c" },
+  switchThumb: { width: 22, height: 22, borderRadius: 11, backgroundColor: "#FFFFFF", transform: [{ translateX: 0 }] },
+  switchThumbActive: { transform: [{ translateX: 20 }] },
+  disabledSwitch: { opacity: 0.45 },
+  daySelector: { flexDirection: "row", justifyContent: "space-between", gap: 5, marginTop: 5, marginBottom: 16 },
+  dayButton: { flex: 1, minHeight: 38, alignItems: "center", justifyContent: "center", borderRadius: 10, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "rgba(16, 43, 30, 0.07)" },
+  dayButtonActive: { backgroundColor: "rgba(11, 43, 30, 0.17)", borderColor: "rgba(11, 43, 30, 0.4)" },
+  dayButtonText: { color: "#68736A", fontSize: 10, fontWeight: "700" },
+  dayButtonTextActive: { color: "#208B51" },
+  timeFields: { flexDirection: "row", gap: 12 },
+  reportAction: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 16, paddingTop: 15, borderTopWidth: 1, borderTopColor: "rgba(16, 43, 30, 0.07)" },
+  reportActionCopy: { flex: 1 },
+  reportActionTitle: { color: "#102B1E", fontSize: 13, fontWeight: "700" },
+  reportActionDescription: { color: "#68736A", fontSize: 11, lineHeight: 15, marginTop: 3 },
+  reportButton: { minHeight: 42, paddingHorizontal: 12, borderRadius: 12, borderWidth: 1, borderColor: "rgba(11, 43, 30, 0.3)", backgroundColor: "rgba(11, 43, 30, 0.1)", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5 },
+  reportButtonText: { color: "#208B51", fontSize: 12, fontWeight: "700" },
+  statusDot: { width: 9, height: 9, borderRadius: 5 },
+  loading: { paddingVertical: 52, alignItems: "center", gap: 12 },
+  loadingText: { color: "#68736A", fontSize: 13 },
 });
