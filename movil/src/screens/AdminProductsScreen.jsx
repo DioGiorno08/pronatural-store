@@ -14,11 +14,13 @@ import {
   RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import AnimatedEntrance from "../components/AnimatedEntrance";
 import { useFocusEffect } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 
 // importamos el hook useAuth para realizar las peticiones a la API del servidor
 import useAuth from "../hooks/useAuth";
+import { parseNonNegativeInteger, parsePositiveAmount } from "../utils/formValidation";
 
 // configuración de Cloudinary para la carga de imágenes de productos
 const CLOUD_NAME = "marcoale";
@@ -105,6 +107,17 @@ const ProductModal = ({ visible, product, onClose, onSaved, categories = [] }) =
       return;
     }
 
+    const price = parsePositiveAmount(form.price);
+    const stock = form.stock.trim() === "" ? 0 : parseNonNegativeInteger(form.stock);
+    if (price === null) {
+      Alert.alert("Precio inválido", "Escribe un precio mayor que cero usando números.");
+      return;
+    }
+    if (stock === null) {
+      Alert.alert("Existencias inválidas", "El inventario debe ser un número entero igual o mayor que cero.");
+      return;
+    }
+
     if (!finalCategory) {
       Alert.alert("Categoría requerida", "Selecciona una categoría de la lista para el producto.");
       return;
@@ -122,8 +135,8 @@ const ProductModal = ({ visible, product, onClose, onSaved, categories = [] }) =
 
       const body = {
         name: form.name.trim(),
-        price: parseFloat(form.price),
-        stock: parseInt(form.stock) || 0,
+        price,
+        stock,
         category: finalCategory,
         desc: form.desc.trim(),
         ...(finalImg ? { img: finalImg } : {}),
@@ -161,7 +174,7 @@ const ProductModal = ({ visible, product, onClose, onSaved, categories = [] }) =
           <View style={modalStyles.hdr}>
             <Text style={modalStyles.title}>{isEdit ? "Editar Producto" : "Nuevo Producto"}</Text>
             <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Ionicons name="close" size={24} color="#888" />
+              <Ionicons name="close" size={24} color="#66736B" />
             </TouchableOpacity>
           </View>
 
@@ -172,7 +185,7 @@ const ProductModal = ({ visible, product, onClose, onSaved, categories = [] }) =
                 <Image source={{ uri: imgUri }} style={modalStyles.imgPreview} />
               ) : (
                 <View style={modalStyles.imgPlaceholder}>
-                  <Ionicons name="camera" size={30} color="#30b466" />
+                  <Ionicons name="camera" size={30} color="#0B2B1E" />
                   <Text style={modalStyles.imgText}>Seleccionar Foto</Text>
                 </View>
               )}
@@ -184,7 +197,7 @@ const ProductModal = ({ visible, product, onClose, onSaved, categories = [] }) =
               <TextInput
                 style={modalStyles.inp}
                 placeholder="Ej. Miel de Abeja 500g, Aceite de Romero..."
-                placeholderTextColor="#555"
+                placeholderTextColor="#66736B"
                 value={form.name}
                 onChangeText={(v) => setForm((f) => ({ ...f, name: v }))}
               />
@@ -197,7 +210,7 @@ const ProductModal = ({ visible, product, onClose, onSaved, categories = [] }) =
                 <TextInput
                   style={modalStyles.inp}
                   placeholder="18.50"
-                  placeholderTextColor="#555"
+                  placeholderTextColor="#66736B"
                   keyboardType="numeric"
                   value={form.price}
                   onChangeText={(v) => setForm((f) => ({ ...f, price: v }))}
@@ -209,7 +222,7 @@ const ProductModal = ({ visible, product, onClose, onSaved, categories = [] }) =
                 <TextInput
                   style={modalStyles.inp}
                   placeholder="50"
-                  placeholderTextColor="#555"
+                  placeholderTextColor="#66736B"
                   keyboardType="numeric"
                   value={form.stock}
                   onChangeText={(v) => setForm((f) => ({ ...f, stock: v }))}
@@ -222,7 +235,7 @@ const ProductModal = ({ visible, product, onClose, onSaved, categories = [] }) =
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                 <Text style={modalStyles.lbl}>Categoría del Producto *</Text>
                 {categories.length > 0 && (
-                  <Text style={{ fontSize: 10.5, color: "#30b466", fontWeight: "600" }}>
+                  <Text style={{ fontSize: 10.5, color: "#0B2B1E", fontWeight: "600" }}>
                     {categories.length} disponibles
                   </Text>
                 )}
@@ -245,7 +258,7 @@ const ProductModal = ({ visible, product, onClose, onSaved, categories = [] }) =
                       <Ionicons
                         name={isSelected ? "checkmark-circle" : "pricetag-outline"}
                         size={13}
-                        color={isSelected ? "#0a110d" : "#4ade80"}
+                        color={isSelected ? "#FFFFFF" : "#208B51"}
                       />
                       <Text
                         style={[
@@ -264,7 +277,7 @@ const ProductModal = ({ visible, product, onClose, onSaved, categories = [] }) =
                   style={[
                     modalStyles.catChip,
                     isManualCat && modalStyles.catChipActive,
-                    { borderColor: "rgba(255,255,255,0.15)" },
+                    { borderColor: "rgba(16, 43, 30, 0.15)" },
                   ]}
                   onPress={() => {
                     setIsManualCat(true);
@@ -275,7 +288,7 @@ const ProductModal = ({ visible, product, onClose, onSaved, categories = [] }) =
                   <Ionicons
                     name={isManualCat ? "checkmark-circle" : "create-outline"}
                     size={13}
-                    color={isManualCat ? "#0a110d" : "#aaa"}
+                    color={isManualCat ? "#102B1E" : "#66736B"}
                   />
                   <Text
                     style={[
@@ -293,7 +306,7 @@ const ProductModal = ({ visible, product, onClose, onSaved, categories = [] }) =
                 <TextInput
                   style={[modalStyles.inp, { marginTop: 8 }]}
                   placeholder="Escribe el nombre de la categoría..."
-                  placeholderTextColor="#555"
+                  placeholderTextColor="#66736B"
                   value={customCat}
                   onChangeText={(v) => {
                     setCustomCat(v);
@@ -309,7 +322,7 @@ const ProductModal = ({ visible, product, onClose, onSaved, categories = [] }) =
               <TextInput
                 style={[modalStyles.inp, { height: 75, textAlignVertical: "top" }]}
                 placeholder="Descripción detallada, ingredientes, beneficios..."
-                placeholderTextColor="#555"
+                placeholderTextColor="#66736B"
                 multiline
                 value={form.desc}
                 onChangeText={(v) => setForm((f) => ({ ...f, desc: v }))}
@@ -328,7 +341,7 @@ const ProductModal = ({ visible, product, onClose, onSaved, categories = [] }) =
                 activeOpacity={0.8}
               >
                 {saving ? (
-                  <ActivityIndicator color="#0a110d" size="small" />
+                  <ActivityIndicator color="#FFFFFF" size="small" />
                 ) : (
                   <Text style={modalStyles.saveTxt}>{isEdit ? "Guardar Cambios" : "Crear Producto"}</Text>
                 )}
@@ -356,27 +369,21 @@ const AdminProductsScreen = () => {
   // Carga paralela de productos y categorías de la base de datos
   const loadData = async () => {
     try {
-      const [prodRes, catRes] = await Promise.allSettled([
+      const [prodRes, catRes] = await Promise.all([
         authFetch("/products"),
         authFetch("/categories"),
       ]);
 
-      if (prodRes.status === "fulfilled") {
-        const data = prodRes.value;
-        setProducts(Array.isArray(data) ? data : data.products || data.data || []);
-      }
+      setProducts(Array.isArray(prodRes) ? prodRes : Array.isArray(prodRes?.products) ? prodRes.products : Array.isArray(prodRes?.data) ? prodRes.data : []);
 
-      if (catRes.status === "fulfilled") {
-        const catData = catRes.value;
-        const list = Array.isArray(catData) ? catData : catData.categorias || catData.categories || [];
-        const names = list
-          .filter((c) => c.estado !== "Inactivo")
-          .map((c) => (c.nombre || c.name || "").trim())
-          .filter(Boolean);
-        setCategories(names);
-      }
+      const list = Array.isArray(catRes) ? catRes : Array.isArray(catRes?.categorias) ? catRes.categorias : Array.isArray(catRes?.categories) ? catRes.categories : Array.isArray(catRes?.data) ? catRes.data : [];
+      const names = list
+        .filter((c) => c.estado !== "Inactivo")
+        .map((c) => (c.nombre || c.name || "").trim())
+        .filter(Boolean);
+      setCategories(names);
     } catch (e) {
-      console.warn("Error al cargar datos:", e.message);
+      Alert.alert("No se cargó el inventario", e.message || "Revisa la conexión e inténtalo de nuevo.");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -429,7 +436,7 @@ const AdminProductsScreen = () => {
     return matchesSearch && matchesFilter;
   });
 
-  const renderItem = ({ item }) => {
+  const renderItem = ({ item, index }) => {
     const name = item.name || item.nombreProducto || "Sin nombre";
     const cat = item.category || item.idCategoria || "Sin categoría";
     const price = item.price !== undefined ? item.price : item.precio || 0;
@@ -440,6 +447,7 @@ const AdminProductsScreen = () => {
       "https://images.unsplash.com/photo-1587049352851-8d4e89134b3e?w=120";
 
     return (
+      <AnimatedEntrance delay={index * 30} distance={5} duration={220}>
       <View style={styles.card}>
         <Image source={{ uri: imgUrl }} style={styles.img} />
         <View style={styles.info}>
@@ -456,14 +464,14 @@ const AdminProductsScreen = () => {
               styles.stockBadge,
               {
                 backgroundColor:
-                  stock <= 15 ? "rgba(239, 68, 68, 0.12)" : "rgba(48, 180, 102, 0.12)",
+                  stock <= 15 ? "rgba(239, 68, 68, 0.12)" : "rgba(11, 43, 30, 0.12)",
               },
             ]}
           >
             <Text
               style={[
                 styles.stockTxt,
-                { color: stock <= 15 ? "#ef4444" : "#30b466" },
+                { color: stock <= 15 ? "#ef4444" : "#0B2B1E" },
               ]}
             >
               {stock} u.
@@ -478,7 +486,7 @@ const AdminProductsScreen = () => {
             }}
             activeOpacity={0.8}
           >
-            <Ionicons name="create-outline" size={16} color="#30b466" />
+            <Ionicons name="create-outline" size={16} color="#0B2B1E" />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -490,6 +498,7 @@ const AdminProductsScreen = () => {
           </TouchableOpacity>
         </View>
       </View>
+      </AnimatedEntrance>
     );
   };
 
@@ -513,24 +522,24 @@ const AdminProductsScreen = () => {
           }}
           activeOpacity={0.8}
         >
-          <Ionicons name="add" size={18} color="#0a110d" />
+          <Ionicons name="add" size={18} color="#FFFFFF" />
           <Text style={styles.addBtnTxt}>Nuevo</Text>
         </TouchableOpacity>
       </View>
 
       {/* BARRA DE BÚSQUEDA */}
       <View style={styles.searchBar}>
-        <Ionicons name="search-outline" size={16} color="#666" />
+        <Ionicons name="search-outline" size={16} color="#66736B" />
         <TextInput
           style={styles.searchInput}
           placeholder="Buscar producto por nombre o categoría..."
-          placeholderTextColor="#555"
+          placeholderTextColor="#66736B"
           value={search}
           onChangeText={setSearch}
         />
         {search.length > 0 && (
           <TouchableOpacity onPress={() => setSearch("")}>
-            <Ionicons name="close-circle" size={16} color="#666" />
+            <Ionicons name="close-circle" size={16} color="#66736B" />
           </TouchableOpacity>
         )}
       </View>
@@ -565,7 +574,7 @@ const AdminProductsScreen = () => {
       {/* LISTA DE PRODUCTOS */}
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color="#30b466" />
+          <ActivityIndicator size="large" color="#0B2B1E" />
         </View>
       ) : (
         <FlatList
@@ -580,12 +589,12 @@ const AdminProductsScreen = () => {
                 setRefreshing(true);
                 loadData();
               }}
-              tintColor="#30b466"
+              tintColor="#0B2B1E"
             />
           }
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Ionicons name="cube-outline" size={44} color="#333" />
+              <Ionicons name="cube-outline" size={44} color="#66736B" />
               <Text style={styles.emptyTxt}>No se encontraron productos</Text>
             </View>
           }
@@ -607,7 +616,7 @@ const AdminProductsScreen = () => {
 export default AdminProductsScreen;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0a0d0f" },
+  container: { flex: 1, backgroundColor: "#FAF9F6" },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -616,74 +625,74 @@ const styles = StyleSheet.create({
     paddingTop: 14,
     paddingBottom: 8,
   },
-  title: { fontSize: 18, fontWeight: "bold", color: "#fff" },
-  subtitle: { fontSize: 11, color: "#666", marginTop: 1 },
+  title: { fontSize: 18, fontWeight: "bold", color: "#102B1E" },
+  subtitle: { fontSize: 11, color: "#66736B", marginTop: 1 },
   addBtn: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#30b466",
+    backgroundColor: "#0B2B1E",
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 8,
     gap: 4,
   },
-  addBtnTxt: { color: "#0a110d", fontWeight: "bold", fontSize: 13 },
+  addBtnTxt: { color: "#FFFFFF", fontWeight: "bold", fontSize: 13 },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#121619",
+    backgroundColor: "#F3F1EB",
     marginHorizontal: 16,
     marginTop: 6,
     marginBottom: 8,
     paddingHorizontal: 12,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderColor: "rgba(16, 43, 30, 0.08)",
     gap: 8,
   },
-  searchInput: { flex: 1, color: "#fff", height: 40, fontSize: 13 },
+  searchInput: { flex: 1, color: "#102B1E", height: 40, fontSize: 13 },
   filterContainer: { marginBottom: 8 },
   filterScroll: { paddingHorizontal: 16, gap: 8 },
   filterTab: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
-    backgroundColor: "#121619",
+    backgroundColor: "#F3F1EB",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
+    borderColor: "rgba(16, 43, 30, 0.06)",
   },
   filterTabActive: {
-    backgroundColor: "rgba(48, 180, 102, 0.15)",
-    borderColor: "#30b466",
+    backgroundColor: "rgba(11, 43, 30, 0.15)",
+    borderColor: "#0B2B1E",
   },
-  filterTabTxt: { color: "#777", fontSize: 12, fontWeight: "600" },
-  filterTabTxtActive: { color: "#4ade80", fontWeight: "bold" },
+  filterTabTxt: { color: "#66736B", fontSize: 12, fontWeight: "600" },
+  filterTabTxtActive: { color: "#208B51", fontWeight: "bold" },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
   list: { paddingHorizontal: 16, paddingBottom: 24 },
   card: {
     flexDirection: "row",
-    backgroundColor: "#161b1e",
-    borderRadius: 12,
-    padding: 12,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    padding: 14,
     marginBottom: 10,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
+    borderColor: "rgba(16, 43, 30, 0.06)",
   },
-  img: { width: 54, height: 54, borderRadius: 8, backgroundColor: "#111" },
+  img: { width: 54, height: 54, borderRadius: 8, backgroundColor: "#F5F3ED" },
   info: { flex: 1, marginLeft: 12 },
-  name: { color: "#fff", fontSize: 14, fontWeight: "bold" },
-  cat: { color: "#777", fontSize: 11, marginTop: 2 },
-  price: { color: "#4ade80", fontSize: 14, fontWeight: "bold", marginTop: 4 },
+  name: { color: "#102B1E", fontSize: 14, fontWeight: "bold" },
+  cat: { color: "#66736B", fontSize: 11, marginTop: 2 },
+  price: { color: "#208B51", fontSize: 14, fontWeight: "bold", marginTop: 4 },
   actions: { alignItems: "flex-end", gap: 6 },
   stockBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
   stockTxt: { fontSize: 11, fontWeight: "bold" },
   editBtn: {
     padding: 6,
-    backgroundColor: "rgba(48,180,102,0.12)",
+    backgroundColor: "rgba(11, 43, 30, 0.12)",
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: "rgba(48,180,102,0.2)",
+    borderColor: "rgba(11, 43, 30, 0.2)",
   },
   delBtn: {
     padding: 6,
@@ -693,7 +702,7 @@ const styles = StyleSheet.create({
     borderColor: "rgba(239,68,68,0.2)",
   },
   empty: { alignItems: "center", justifyContent: "center", paddingVertical: 60 },
-  emptyTxt: { color: "#555", marginTop: 10, fontSize: 13 },
+  emptyTxt: { color: "#66736B", marginTop: 10, fontSize: 13 },
 });
 
 const modalStyles = StyleSheet.create({
@@ -703,13 +712,13 @@ const modalStyles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   sheet: {
-    backgroundColor: "#161b1e",
+    backgroundColor: "#F5F3ED",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
     maxHeight: "88%",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderColor: "rgba(16, 43, 30, 0.08)",
   },
   hdr: {
     flexDirection: "row",
@@ -718,15 +727,15 @@ const modalStyles = StyleSheet.create({
     marginBottom: 16,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.06)",
+    borderBottomColor: "rgba(16, 43, 30, 0.06)",
   },
-  title: { color: "#fff", fontSize: 17, fontWeight: "bold" },
+  title: { color: "#102B1E", fontSize: 17, fontWeight: "bold" },
   imgBox: {
     height: 100,
-    backgroundColor: "#0d1114",
+    backgroundColor: "#FFFFFF",
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
+    borderColor: "rgba(16, 43, 30, 0.1)",
     borderStyle: "dashed",
     justifyContent: "center",
     alignItems: "center",
@@ -735,15 +744,15 @@ const modalStyles = StyleSheet.create({
   },
   imgPreview: { width: "100%", height: "100%", resizeMode: "cover" },
   imgPlaceholder: { alignItems: "center", gap: 4 },
-  imgText: { color: "#777", fontSize: 11, fontWeight: "600" },
+  imgText: { color: "#66736B", fontSize: 11, fontWeight: "600" },
   field: { marginBottom: 12 },
-  lbl: { color: "#888", fontSize: 11, fontWeight: "bold", textTransform: "uppercase", marginBottom: 5 },
+  lbl: { color: "#66736B", fontSize: 11, fontWeight: "bold", textTransform: "uppercase", marginBottom: 5 },
   inp: {
-    backgroundColor: "#0d1114",
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
+    borderColor: "rgba(16, 43, 30, 0.1)",
     borderRadius: 8,
-    color: "#fff",
+    color: "#102B1E",
     paddingHorizontal: 12,
     height: 42,
     fontSize: 13,
@@ -757,24 +766,24 @@ const modalStyles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "#0d1114",
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "rgba(48,180,102,0.25)",
+    borderColor: "rgba(11, 43, 30, 0.25)",
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 8,
   },
   catChipActive: {
-    backgroundColor: "#30b466",
-    borderColor: "#30b466",
+    backgroundColor: "#0B2B1E",
+    borderColor: "#0B2B1E",
   },
   catChipTxt: {
-    color: "#4ade80",
+    color: "#208B51",
     fontSize: 12,
     fontWeight: "600",
   },
   catChipTxtActive: {
-    color: "#0a110d",
+    color: "#FFFFFF",
     fontWeight: "bold",
   },
   btns: { flexDirection: "row", gap: 10, marginTop: 12, marginBottom: 20 },
@@ -783,16 +792,16 @@ const modalStyles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
+    borderColor: "rgba(16, 43, 30, 0.1)",
     alignItems: "center",
   },
-  cancelTxt: { color: "#888", fontSize: 13.5, fontWeight: "bold" },
+  cancelTxt: { color: "#66736B", fontSize: 13.5, fontWeight: "bold" },
   saveBtn: {
     flex: 1.5,
-    backgroundColor: "#30b466",
+    backgroundColor: "#0B2B1E",
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: "center",
   },
-  saveTxt: { color: "#0a110d", fontSize: 13.5, fontWeight: "bold" },
+  saveTxt: { color: "#FFFFFF", fontSize: 13.5, fontWeight: "bold" },
 });

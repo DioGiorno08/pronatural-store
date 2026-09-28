@@ -13,6 +13,7 @@ import {
   RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import AnimatedEntrance from "../components/AnimatedEntrance";
 import { useFocusEffect } from "@react-navigation/native";
 import useAuth from "../hooks/useAuth";
 
@@ -40,6 +41,10 @@ const CategoryModal = ({ visible, category, onClose, onSaved }) => {
   const handleSave = async () => {
     if (!nombre.trim()) {
       Alert.alert("Campo requerido", "El nombre de la categoría es obligatorio.");
+      return;
+    }
+    if (nombre.trim().length < 2) {
+      Alert.alert("Nombre inválido", "El nombre de la categoría debe tener al menos 2 caracteres.");
       return;
     }
 
@@ -87,7 +92,7 @@ const CategoryModal = ({ visible, category, onClose, onSaved }) => {
               {isEdit ? "Editar Categoría" : "Nueva Categoría"}
             </Text>
             <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Ionicons name="close" size={24} color="#888" />
+              <Ionicons name="close" size={24} color="#66736B" />
             </TouchableOpacity>
           </View>
 
@@ -97,7 +102,7 @@ const CategoryModal = ({ visible, category, onClose, onSaved }) => {
               <TextInput
                 style={modalStyles.inp}
                 placeholder="Ej. Aceites y Bálsamos, Infusiones..."
-                placeholderTextColor="#555"
+                placeholderTextColor="#66736B"
                 value={nombre}
                 onChangeText={setNombre}
               />
@@ -108,7 +113,7 @@ const CategoryModal = ({ visible, category, onClose, onSaved }) => {
               <TextInput
                 style={[modalStyles.inp, { height: 75, textAlignVertical: "top" }]}
                 placeholder="Breve descripción del catálogo o usos..."
-                placeholderTextColor="#555"
+                placeholderTextColor="#66736B"
                 multiline
                 value={descripcion}
                 onChangeText={setDescripcion}
@@ -147,7 +152,7 @@ const CategoryModal = ({ visible, category, onClose, onSaved }) => {
               activeOpacity={0.8}
             >
               {saving ? (
-                <ActivityIndicator color="#0a110d" size="small" />
+                <ActivityIndicator color="#FFFFFF" size="small" />
               ) : (
                 <Text style={modalStyles.saveBtnTxt}>
                   {isEdit ? "Guardar Cambios" : "Crear Categoría"}
@@ -223,7 +228,8 @@ const AdminCategoriesScreen = () => {
     c.nombre.toLowerCase().includes(search.toLowerCase())
   );
 
-  const renderCategory = ({ item }) => (
+  const renderCategory = ({ item, index }) => (
+    <AnimatedEntrance delay={index * 30} distance={5} duration={220}>
     <View style={styles.card}>
       <View style={styles.cardHeader}>
         <View style={styles.catIdPill}>
@@ -262,7 +268,7 @@ const AdminCategoriesScreen = () => {
           }}
           activeOpacity={0.8}
         >
-          <Ionicons name="create-outline" size={14} color="#30b466" />
+          <Ionicons name="create-outline" size={14} color="#0B2B1E" />
           <Text style={styles.editBtnTxt}>Editar</Text>
         </TouchableOpacity>
 
@@ -276,6 +282,7 @@ const AdminCategoriesScreen = () => {
         </TouchableOpacity>
       </View>
     </View>
+    </AnimatedEntrance>
   );
 
   return (
@@ -295,30 +302,30 @@ const AdminCategoriesScreen = () => {
           }}
           activeOpacity={0.8}
         >
-          <Ionicons name="add" size={18} color="#0a110d" />
+          <Ionicons name="add" size={18} color="#FFFFFF" />
           <Text style={styles.addBtnTxt}>Nueva</Text>
         </TouchableOpacity>
       </View>
 
       <View style={styles.searchBar}>
-        <Ionicons name="search-outline" size={16} color="#666" />
+        <Ionicons name="search-outline" size={16} color="#66736B" />
         <TextInput
           style={styles.searchInput}
           placeholder="Buscar categorías..."
-          placeholderTextColor="#555"
+          placeholderTextColor="#66736B"
           value={search}
           onChangeText={setSearch}
         />
         {search.length > 0 && (
           <TouchableOpacity onPress={() => setSearch("")}>
-            <Ionicons name="close-circle" size={16} color="#666" />
+            <Ionicons name="close-circle" size={16} color="#66736B" />
           </TouchableOpacity>
         )}
       </View>
 
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color="#30b466" />
+          <ActivityIndicator size="large" color="#0B2B1E" />
         </View>
       ) : (
         <FlatList
@@ -333,12 +340,12 @@ const AdminCategoriesScreen = () => {
                 setRefreshing(true);
                 fetchCategories();
               }}
-              tintColor="#30b466"
+              tintColor="#0B2B1E"
             />
           }
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Ionicons name="pricetags-outline" size={44} color="#333" />
+              <Ionicons name="pricetags-outline" size={44} color="#66736B" />
               <Text style={styles.emptyTxt}>No hay categorías registradas</Text>
             </View>
           }
@@ -358,7 +365,7 @@ const AdminCategoriesScreen = () => {
 export default AdminCategoriesScreen;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0a0d0f" },
+  container: { flex: 1, backgroundColor: "#FAF9F6" },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -367,40 +374,40 @@ const styles = StyleSheet.create({
     paddingTop: 14,
     paddingBottom: 10,
   },
-  title: { fontSize: 18, fontWeight: "bold", color: "#fff" },
-  subtitle: { fontSize: 11, color: "#666", marginTop: 1 },
+  title: { fontSize: 18, fontWeight: "bold", color: "#102B1E" },
+  subtitle: { fontSize: 11, color: "#66736B", marginTop: 1 },
   addBtn: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#30b466",
+    backgroundColor: "#0B2B1E",
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 8,
     gap: 4,
   },
-  addBtnTxt: { color: "#0a110d", fontWeight: "bold", fontSize: 13 },
+  addBtnTxt: { color: "#FFFFFF", fontWeight: "bold", fontSize: 13 },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#121619",
+    backgroundColor: "#F3F1EB",
     marginHorizontal: 16,
     marginVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderColor: "rgba(16, 43, 30, 0.08)",
     gap: 8,
   },
-  searchInput: { flex: 1, color: "#fff", height: 40, fontSize: 13 },
+  searchInput: { flex: 1, color: "#102B1E", height: 40, fontSize: 13 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
   list: { paddingHorizontal: 16, paddingBottom: 24 },
   card: {
-    backgroundColor: "#161b1e",
-    borderRadius: 12,
-    padding: 14,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    padding: 16,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
+    borderColor: "rgba(16, 43, 30, 0.06)",
   },
   cardHeader: {
     flexDirection: "row",
@@ -409,33 +416,33 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   catIdPill: {
-    backgroundColor: "rgba(255,255,255,0.04)",
+    backgroundColor: "rgba(16, 43, 30, 0.04)",
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
   },
-  catIdTxt: { color: "#4ade80", fontSize: 11, fontFamily: "monospace", fontWeight: "bold" },
+  catIdTxt: { color: "#208B51", fontSize: 11, fontFamily: "monospace", fontWeight: "bold" },
   badge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
-  badgeActive: { backgroundColor: "rgba(48, 180, 102, 0.12)" },
+  badgeActive: { backgroundColor: "rgba(11, 43, 30, 0.12)" },
   badgeInactive: { backgroundColor: "rgba(239, 68, 68, 0.12)" },
   badgeTxt: { fontSize: 10, fontWeight: "bold" },
-  badgeTxtActive: { color: "#4ade80" },
+  badgeTxtActive: { color: "#208B51" },
   badgeTxtInactive: { color: "#ef4444" },
-  catName: { color: "#fff", fontSize: 15, fontWeight: "bold", marginBottom: 4 },
-  catDesc: { color: "#888", fontSize: 12, lineHeight: 16, marginBottom: 12 },
+  catName: { color: "#102B1E", fontSize: 15, fontWeight: "bold", marginBottom: 4 },
+  catDesc: { color: "#66736B", fontSize: 12, lineHeight: 16, marginBottom: 12 },
   actionsRow: { flexDirection: "row", gap: 8, justifyContent: "flex-end" },
   editBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: "rgba(48, 180, 102, 0.12)",
+    backgroundColor: "rgba(11, 43, 30, 0.12)",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: "rgba(48, 180, 102, 0.25)",
+    borderColor: "rgba(11, 43, 30, 0.25)",
   },
-  editBtnTxt: { color: "#4ade80", fontSize: 12, fontWeight: "bold" },
+  editBtnTxt: { color: "#208B51", fontSize: 12, fontWeight: "bold" },
   deleteBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -449,7 +456,7 @@ const styles = StyleSheet.create({
   },
   deleteBtnTxt: { color: "#ef4444", fontSize: 12, fontWeight: "bold" },
   empty: { alignItems: "center", justifyContent: "center", paddingVertical: 60 },
-  emptyTxt: { color: "#555", marginTop: 10, fontSize: 13 },
+  emptyTxt: { color: "#66736B", marginTop: 10, fontSize: 13 },
 });
 
 const modalStyles = StyleSheet.create({
@@ -459,13 +466,13 @@ const modalStyles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   sheet: {
-    backgroundColor: "#161b1e",
+    backgroundColor: "#F5F3ED",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
     maxHeight: "80%",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderColor: "rgba(16, 43, 30, 0.08)",
   },
   hdr: {
     flexDirection: "row",
@@ -474,17 +481,17 @@ const modalStyles = StyleSheet.create({
     marginBottom: 16,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.06)",
+    borderBottomColor: "rgba(16, 43, 30, 0.06)",
   },
-  title: { color: "#fff", fontSize: 17, fontWeight: "bold" },
+  title: { color: "#102B1E", fontSize: 17, fontWeight: "bold" },
   field: { marginBottom: 14 },
-  lbl: { color: "#888", fontSize: 11, fontWeight: "bold", textTransform: "uppercase", marginBottom: 6 },
+  lbl: { color: "#66736B", fontSize: 11, fontWeight: "bold", textTransform: "uppercase", marginBottom: 6 },
   inp: {
-    backgroundColor: "#0d1114",
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
+    borderColor: "rgba(16, 43, 30, 0.1)",
     borderRadius: 8,
-    color: "#fff",
+    color: "#102B1E",
     paddingHorizontal: 12,
     height: 42,
     fontSize: 13,
@@ -495,23 +502,23 @@ const modalStyles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-    backgroundColor: "#0d1114",
+    borderColor: "rgba(16, 43, 30, 0.1)",
+    backgroundColor: "#FFFFFF",
     alignItems: "center",
   },
   stateOptActive: {
-    backgroundColor: "rgba(48, 180, 102, 0.15)",
-    borderColor: "#30b466",
+    backgroundColor: "rgba(11, 43, 30, 0.15)",
+    borderColor: "#0B2B1E",
   },
-  stateOptTxt: { color: "#777", fontSize: 13, fontWeight: "600" },
-  stateOptTxtActive: { color: "#4ade80", fontWeight: "bold" },
+  stateOptTxt: { color: "#66736B", fontSize: 13, fontWeight: "600" },
+  stateOptTxtActive: { color: "#208B51", fontWeight: "bold" },
   saveBtn: {
-    backgroundColor: "#30b466",
+    backgroundColor: "#0B2B1E",
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: "center",
     marginTop: 8,
     marginBottom: 16,
   },
-  saveBtnTxt: { color: "#0a110d", fontSize: 14, fontWeight: "bold" },
+  saveBtnTxt: { color: "#FFFFFF", fontSize: 14, fontWeight: "bold" },
 });

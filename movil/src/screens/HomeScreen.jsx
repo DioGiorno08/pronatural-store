@@ -34,7 +34,7 @@ const HomeScreen = () => {
   if (loading) {
     return (
       <View style={[styles.container, { justifyContent: "center" }]}>
-        <ActivityIndicator size="large" color="#30b466" />
+        <ActivityIndicator size="large" color="#0B2B1E" />
       </View>
     );
   }
@@ -58,7 +58,7 @@ const HomeScreen = () => {
       imageUrl={item.img || item.imagenProducto}
       price={item.price || item.precio}
       badgeText={`${item.stock || 0} u.`}
-      badgeColor={(item.stock || 0) <= 15 ? "#ef4444" : "#30b466"}
+      badgeColor={(item.stock || 0) <= 15 ? "#ef4444" : "#0B2B1E"}
     />
   );
 
@@ -83,7 +83,7 @@ const HomeScreen = () => {
         renderItem={renderItem}
         contentContainerStyle={{ paddingBottom: 20 }}
         ListEmptyComponent={
-          <Text style={{ color: "#555", textAlign: "center", marginTop: 20 }}>
+          <Text style={{ color: "#66736B", textAlign: "center", marginTop: 20 }}>
             No se encontraron productos en la base de datos.
           </Text>
         }
@@ -97,17 +97,17 @@ export default HomeScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0a0d0f",
+    backgroundColor: "#FAF9F6",
     padding: 16,
   },
   title: {
-    color: "#fff",
+    color: "#102B1E",
     fontSize: 22,
     fontWeight: "bold",
     marginBottom: 10,
   },
   description: {
-    color: "#aaa",
+    color: "#66736B",
     fontSize: 14,
     marginBottom: 16,
     lineHeight: 20,
